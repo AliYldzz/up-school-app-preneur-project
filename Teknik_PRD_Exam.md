@@ -68,6 +68,7 @@ Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algo
 *(Ek tablolar: User objesinde `exam_date`, `daily_goal_hours`; Task objesinde `subject_id`, `estimated_time`, `actual_time`; Performance objesinde `date`, `net_count`, `accuracy_rate` gibi alanlar da mevcuttur.)*
 
 ### 4.2. API ve State Management
+* **Backend Framework:** API geliştirme sürecinde FastAPI kullanılacaktır (Bkz: [fastapi docs](https://fastapi.tiangolo.com/)).
 * **State:** Uygulama, kullanıcının o anki "State"ini (Çalışıyor, Mola, Briefing Bekliyor) global bir state manager (Redux/Bloc vb.) ile takip etmelidir.
 * **Latency:** API yanıt süreleri 300ms altında olmalı. "İstanbul Modu" kartları için CDN kullanılmalı.
 * **API Kontratı - POST `/v1/plan/reschedule`**
