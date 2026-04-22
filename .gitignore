@@ -1,0 +1,24 @@
+# Python/FastAPI
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+env/
+.venv/
+
+# Flutter/Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# JS/React
+node_modules/
+dist/
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/

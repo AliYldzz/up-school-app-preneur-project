@@ -1,0 +1,23 @@
+name: lms_mobile
+description: Sınav Yol Arkadaşım Mobil Uygulaması
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # hive: ^2.2.3    # Offline storage
+  # http: ^1.1.0    # API Connect
+  # provider: ^6.0.5 # Global State Management
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
