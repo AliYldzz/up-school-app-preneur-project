@@ -7,18 +7,26 @@ venv/
 env/
 .venv/
 
-# Flutter/Dart
-.dart_tool/
-.packages
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
+# Expo / React Native (mobile)
+mobile/node_modules/
+mobile/.expo/
+mobile/dist/
+mobile/android/
+mobile/ios/
+mobile/*.jks
+mobile/*.p8
+mobile/*.p12
+mobile/*.key
+mobile/*.mobileprovision
+mobile/google-service-account.json
 
-# JS/React
-node_modules/
-dist/
+# JS/React (web)
+web/node_modules/
+web/dist/
+web/.vite/
+
+# General
 .DS_Store
-
-# IDEs
 .vscode/
 .idea/
+*.log

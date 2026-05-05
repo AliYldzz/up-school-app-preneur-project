@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Sınav Yol Arkadaşım",
+    "slug": "sinav-yol-arkadas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "sinavyolarkadas",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D0B2E"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sinav.yolarkadas",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Kamera erişimi profil fotoğrafı için gereklidir.",
+        "NSPhotoLibraryUsageDescription": "Fotoğraf galerisi erişimi profil fotoğrafı seçmek için gereklidir.",
+        "NSMicrophoneUsageDescription": "Mikrofon erişimi sesli not almak için gereklidir."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0D0B2E"
+      },
+      "package": "com.sinav.yolarkadas",
+      "versionCode": 1,
+      "permissions": [
+        "INTERNET",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "BURAYA_EAS_PROJECT_ID_GELECEK"
+      }
+    }
+  }
+}
