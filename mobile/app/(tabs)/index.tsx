@@ -115,7 +115,7 @@ export default function HomeScreen() {
 
   const handleTaskPress = (item: any) => {
     if (item.status === 'active' || item.status === 'pending' || item.status === 'in_progress') {
-      router.push(`/timer/${item.id}?subject=${item.subject}&duration=${item.timeRange}`);
+      router.push(`/timer/${item.id}?subject=${item.subject}&duration=${item.timeRange}` as any);
     }
   };
 

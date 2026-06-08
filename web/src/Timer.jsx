@@ -43,12 +43,54 @@ function Timer({ task, onBack, onComplete }) {
 
   const toggleTimer = () => setIsRunning(!isRunning);
 
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [solvedInput, setSolvedInput] = useState('');
+  const [correctInput, setCorrectInput] = useState('');
+  const [wrongInput, setWrongInput] = useState('');
+  const [validationError, setValidationError] = useState('');
+
   const handleFinish = () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    setShowStatsModal(true);
+  };
+
+  const handleSaveStats = () => {
+    const solved = parseInt(solvedInput) || 0;
+    const correct = parseInt(correctInput) || 0;
+    const wrong = parseInt(wrongInput) || 0;
+
+    if (solved < 0 || correct < 0 || wrong < 0) {
+      setValidationError("Lütfen geçerli sayılar girin.");
+      return;
+    }
+
+    if (correct + wrong > solved) {
+      setValidationError("Doğru ve yanlış sayılarının toplamı çözülen soru sayısından fazla olamaz!");
+      return;
+    }
+
+    setValidationError('');
+    setShowStatsModal(false);
+
     if (onComplete) {
-      onComplete();
-    } else {
-      onBack();
+      onComplete({
+        questions_solved: solved,
+        questions_correct: correct,
+        questions_wrong: wrong,
+        actual_time: Math.round((initialSeconds - timeLeft) / 60)
+      });
+    }
+  };
+
+  const handleSkipStats = () => {
+    setShowStatsModal(false);
+    if (onComplete) {
+      onComplete({
+        questions_solved: 0,
+        questions_correct: 0,
+        questions_wrong: 0,
+        actual_time: Math.round((initialSeconds - timeLeft) / 60)
+      });
     }
   };
 
@@ -140,6 +182,66 @@ function Timer({ task, onBack, onComplete }) {
         </div>
 
       </div>
+
+      {showStatsModal && (
+        <div style={styles.modalOverlay}>
+          <div className="glass-panel" style={styles.modalContent}>
+            <h3 style={styles.modalTitle}>Çalışma Özeti 📊</h3>
+            <p style={styles.modalSubtitle}>Bu çalışma oturumunda çözdüğün soru sayılarını kaydedelim.</p>
+            
+            {validationError && (
+              <div style={styles.errorText}>⚠️ {validationError}</div>
+            )}
+
+            <div style={styles.modalInputGroup}>
+              <label style={styles.modalLabel}>Toplam Çözülen Soru</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="Örn: 50"
+                value={solvedInput}
+                onChange={(e) => setSolvedInput(e.target.value)}
+                style={styles.modalInput}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+              <div style={{ ...styles.modalInputGroup, flex: 1 }}>
+                <label style={styles.modalLabel}>Doğru</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Örn: 40"
+                  value={correctInput}
+                  onChange={(e) => setCorrectInput(e.target.value)}
+                  style={{ ...styles.modalInput, borderColor: '#2ECC71' }}
+                />
+              </div>
+              <div style={{ ...styles.modalInputGroup, flex: 1 }}>
+                <label style={styles.modalLabel}>Yanlış</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Örn: 10"
+                  value={wrongInput}
+                  onChange={(e) => setWrongInput(e.target.value)}
+                  style={{ ...styles.modalInput, borderColor: '#EF4444' }}
+                />
+              </div>
+            </div>
+
+            <div style={styles.modalActions}>
+              <button onClick={handleSkipStats} style={styles.modalCancelButton}>
+                Atla
+              </button>
+              <button onClick={handleSaveStats} style={styles.modalConfirmButton}>
+                Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -289,6 +391,103 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     fontFamily: 'inherit',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+    padding: '20px',
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: '340px',
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
+    padding: '24px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+  },
+  modalTitle: {
+    fontSize: '20px',
+    fontWeight: '800',
+    color: '#243B55',
+    margin: 0,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: '13px',
+    color: '#64748B',
+    textAlign: 'center',
+    margin: '0 0 4px 0',
+    lineHeight: '1.4',
+  },
+  modalInputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  modalLabel: {
+    fontSize: '12px',
+    fontWeight: '700',
+    color: '#243B55',
+  },
+  modalInput: {
+    padding: '12px',
+    borderRadius: '12px',
+    border: '1px solid #CBD5E1',
+    fontSize: '15px',
+    outline: 'none',
+    width: '100%',
+    boxSizing: 'border-box',
+    backgroundColor: '#FFFFFF',
+    color: '#243B55',
+  },
+  errorText: {
+    color: '#EF4444',
+    fontSize: '13px',
+    fontWeight: '600',
+    backgroundColor: '#FEF2F2',
+    padding: '10px',
+    borderRadius: '10px',
+    border: '1px solid #FEE2E2',
+    textAlign: 'center',
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '8px',
+  },
+  modalConfirmButton: {
+    flex: 1.5,
+    backgroundColor: '#2ECC71',
+    color: '#FFFFFF',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '12px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 4px 10px rgba(46, 204, 113, 0.2)',
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: '#F1F5F9',
+    color: '#64748B',
+    border: '1px solid #E2E8F0',
+    borderRadius: '12px',
+    padding: '12px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
   },
 };
 

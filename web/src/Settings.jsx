@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Settings({ onBack }) {
+export default function Settings({ onBack, onLogout }) {
   const sections = [
     {
       title: 'Hesap Ayarları',
@@ -62,7 +62,7 @@ export default function Settings({ onBack }) {
           </div>
         ))}
 
-        <button style={styles.logoutButton}>Oturumu Kapat</button>
+        <button style={styles.logoutButton} onClick={onLogout}>Oturumu Kapat</button>
       </div>
     </div>
   );

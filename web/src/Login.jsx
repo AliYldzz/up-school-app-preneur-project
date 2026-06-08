@@ -17,15 +17,29 @@ export default function Login({ onLoginSuccess, onRegisterClick }) {
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      setIsLoading(false);
-      
-      if (password === '123456') {
-        onLoginSuccess();
-      } else {
-        setError('Şifreniz yanlış. Lütfen tekrar deneyin. (İpucu: 123456)');
+    fetch('http://127.0.0.1:8000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    })
+    .then(async (res) => {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || 'Giriş yapılamadı.');
       }
-    }, 1000);
+      return data;
+    })
+    .then((data) => {
+      setIsLoading(false);
+      localStorage.setItem('token', data.access_token);
+      onLoginSuccess();
+    })
+    .catch((err) => {
+      setIsLoading(false);
+      setError(err.message || 'Hatalı e-posta veya şifre.');
+    });
   };
 
   return (
@@ -129,7 +143,7 @@ const styles = {
     width: '100%',
     maxWidth: '480px',
     margin: '0 auto',
-    backgroundColor: '#F0F4F8', // Çok açık buz mavisi arkaplan
+    background: 'transparent',
   },
   headerContainer: {
     display: 'flex',
@@ -154,13 +168,13 @@ const styles = {
   title: {
     fontSize: '28px',
     fontWeight: '800',
-    color: '#243B55', // Ana Renk Koyu Lacivert
+    color: '#FFFFFF', 
     marginBottom: '8px',
     textAlign: 'center',
   },
   subtitle: {
     fontSize: '15px',
-    color: '#3498DB', // Vurgu rengi Açık Mavi
+    color: '#A7F3D0',
     textAlign: 'center',
   },
   formContainer: {
@@ -198,7 +212,7 @@ const styles = {
   inputWrapper: {
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: '#F0F4F8', // Girdi alanı açık buz mavisi
+    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
     borderRadius: '16px',
     border: '1px solid #CBD5E1',
     padding: '0 16px',

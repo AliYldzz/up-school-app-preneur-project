@@ -4,6 +4,8 @@ import Login from './Login';
 import Register from './Register';
 import Profile from './Profile';
 import Settings from './Settings';
+import Errors from './Errors';
+import Lessons from './Lessons';
 
 const INITIAL_PROGRAM = [
   { 
@@ -46,11 +48,39 @@ const INITIAL_PROGRAM = [
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [profilePic, setProfilePic] = useState(() => {
+    try {
+      return localStorage.getItem('profilePic') || null;
+    } catch (e) {
+      console.warn("Could not read profilePic from localStorage:", e);
+      return null;
+    }
+  });
+  const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Geleceğin Şampiyonu');
+  const [userTarget, setUserTarget] = useState(() => localStorage.getItem('userTarget') || 'İlk 5000');
+  const [userFocus, setUserFocus] = useState(() => localStorage.getItem('userFocus') || 'Sayısal');
   const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
   const [currentTab, setCurrentTab] = useState('home'); // 'home' or 'profile'
   const [activeTimerTask, setActiveTimerTask] = useState(null);
-  const [program, setProgram] = useState(INITIAL_PROGRAM);
+  const [program, setProgram] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [userStats, setUserStats] = useState({
+    total_solved: 0,
+    total_correct: 0,
+    total_wrong: 0,
+    accuracy_rate: 0,
+    total_hours: 0
+  });
+  const [statsTrigger, setStatsTrigger] = useState(0);
+  const triggerStatsUpdate = () => setStatsTrigger(prev => prev + 1);
+
+  const getDaysRemaining = () => {
+    const examDate = new Date('2026-06-13T10:00:00'); // YKS 2026
+    const today = new Date();
+    const diffTime = examDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
 
   const completedTasks = program.filter(t => t.status === 'completed').length;
   const totalTasks = program.length;
@@ -62,8 +92,163 @@ function App() {
     }
   }, [completedTasks, totalTasks]);
 
-  const handleTaskComplete = (taskId) => {
-    setProgram(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t));
+  // Giriş durumunu ve kullanıcı verilerini API'den yükleme
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('http://127.0.0.1:8000/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Oturum süresi dolmuş.');
+      })
+      .then(data => {
+        setUserName(data.fullName);
+        setUserTarget(data.target_goal);
+        setUserFocus(data.focus_area);
+        setProfilePic(data.profile_pic);
+        setIsLoggedIn(true);
+      })
+      .catch(() => {
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+      });
+    }
+  }, [isLoggedIn]);
+
+  // Get tasks from API when logged in
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (isLoggedIn && token) {
+      fetch('http://127.0.0.1:8000/api/tasks/', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Görevler yüklenemedi');
+      })
+      .then(data => {
+        if (data.length === 0) {
+          // Create initial tasks in backend
+          const createPromises = INITIAL_PROGRAM.map(t => {
+            return fetch('http://127.0.0.1:8000/api/tasks/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                title: t.title,
+                subject_name: t.subject,
+                estimated_time: parseInt(t.timeRange) || 60,
+                status: 'pending'
+              })
+            }).then(r => r.json());
+          });
+          Promise.all(createPromises).then(createdTasks => {
+            const formatted = createdTasks.map(ct => ({
+              id: ct.id,
+              subject: ct.subject_name,
+              title: ct.title,
+              timeRange: `${ct.estimated_time} dakika`,
+              status: ct.status,
+              color: ct.subject_name === 'MATEMATİK' ? '#3B82F6' : ct.subject_name === 'FİZİK' ? '#EF4444' : ct.subject_name === 'TÜRKÇE' ? '#8B5CF6' : '#F97316',
+              bgColor: ct.subject_name === 'MATEMATİK' ? '#EFF6FF' : ct.subject_name === 'FİZİK' ? '#FEF2F2' : ct.subject_name === 'TÜRKÇE' ? '#F5F3FF' : '#FFF7ED'
+            }));
+            setProgram(formatted);
+          });
+        } else {
+          const formatted = data.map(ct => ({
+            id: ct.id,
+            subject: ct.subject_name,
+            title: ct.title,
+            timeRange: `${ct.estimated_time} dakika`,
+            status: ct.status,
+            color: ct.subject_name === 'MATEMATİK' ? '#3B82F6' : ct.subject_name === 'FİZİK' ? '#EF4444' : ct.subject_name === 'TÜRKÇE' ? '#8B5CF6' : '#F97316',
+            bgColor: ct.subject_name === 'MATEMATİK' ? '#EFF6FF' : ct.subject_name === 'FİZİK' ? '#FEF2F2' : ct.subject_name === 'TÜRKÇE' ? '#F5F3FF' : '#FFF7ED'
+          }));
+          setProgram(formatted);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+      });
+    }
+  }, [isLoggedIn]);
+
+  // Get user stats from API when logged in or when statsTrigger changes
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (isLoggedIn && token) {
+      fetch('http://127.0.0.1:8000/api/auth/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('İstatistikler yüklenemedi');
+      })
+      .then(data => {
+        setUserStats(data);
+      })
+      .catch(err => {
+        console.error(err);
+      });
+    }
+  }, [isLoggedIn, statsTrigger]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setProfilePic(null);
+    setUserName('Geleceğin Şampiyonu');
+    setUserTarget('İlk 5000');
+    setUserFocus('Sayısal');
+    setCurrentTab('home');
+    setUserStats({
+      total_solved: 0,
+      total_correct: 0,
+      total_wrong: 0,
+      accuracy_rate: 0,
+      total_hours: 0
+    });
+  };
+
+  const handleTaskComplete = (taskId, questionStats) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch(`http://127.0.0.1:8000/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'completed',
+          questions_solved: questionStats?.questions_solved || 0,
+          questions_correct: questionStats?.questions_correct || 0,
+          questions_wrong: questionStats?.questions_wrong || 0,
+          actual_time: questionStats?.actual_time || 0
+        })
+      })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Görev güncellenemedi');
+      })
+      .then(() => {
+        triggerStatsUpdate();
+        setProgram(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t));
+      })
+      .catch(err => {
+        console.error(err);
+      });
+    }
     setActiveTimerTask(null);
   };
 
@@ -82,22 +267,107 @@ function App() {
 
   if (!isLoggedIn) {
     if (authMode === 'register') {
-      return <Register onBack={() => setAuthMode('login')} onRegisterSuccess={() => setIsLoggedIn(true)} />;
+      return (
+        <Register 
+          onBack={() => setAuthMode('login')} 
+          onRegisterSuccess={(pic, name, answers) => {
+            if (pic) {
+              setProfilePic(pic);
+              try {
+                localStorage.setItem('profilePic', pic);
+              } catch (e) {
+                console.warn("Profile picture is too large to store in localStorage:", e);
+              }
+            } else {
+              setProfilePic(null);
+              try {
+                localStorage.removeItem('profilePic');
+              } catch (e) {
+                console.warn("Could not remove profilePic from localStorage:", e);
+              }
+            }
+            if (name) {
+              setUserName(name);
+              localStorage.setItem('userName', name);
+            }
+            if (answers) {
+              if (answers.target) {
+                setUserTarget(answers.target);
+                localStorage.setItem('userTarget', answers.target);
+              }
+              if (answers.focus) {
+                setUserFocus(answers.focus);
+                localStorage.setItem('userFocus', answers.focus);
+              }
+            }
+            setIsLoggedIn(true);
+          }} 
+        />
+      );
     }
     return <Login onLoginSuccess={() => setIsLoggedIn(true)} onRegisterClick={() => setAuthMode('register')} />;
   }
 
   if (activeTimerTask) {
-    return <Timer task={activeTimerTask} onBack={(data) => handleTimerBack(data?.isPaused)} onComplete={() => handleTaskComplete(activeTimerTask.id)} />;
+    return <Timer task={activeTimerTask} onBack={(data) => handleTimerBack(data?.isPaused)} onComplete={(stats) => handleTaskComplete(activeTimerTask.id, stats)} />;
   }
 
   const renderContent = () => {
     if (currentTab === 'profile') {
-      return <Profile onSettings={() => setCurrentTab('settings')} />;
+      return (
+        <Profile 
+          onSettings={() => setCurrentTab('settings')} 
+          profilePic={profilePic} 
+          userName={userName} 
+          userTarget={userTarget} 
+          userFocus={userFocus} 
+          userStats={userStats}
+          onUpdateProfile={(name, target, focus, pic) => {
+            const token = localStorage.getItem('token');
+            if (token) {
+              fetch('http://127.0.0.1:8000/api/auth/me', {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  fullName: name,
+                  target_goal: target,
+                  focus_area: focus,
+                  profile_pic: pic
+                })
+              })
+              .then(res => {
+                if (res.ok) return res.json();
+                throw new Error('Profil güncellenemedi');
+              })
+              .then(data => {
+                setUserName(data.fullName);
+                setUserTarget(data.target_goal);
+                setUserFocus(data.focus_area);
+                if (data.profile_pic) setProfilePic(data.profile_pic);
+              })
+              .catch(err => {
+                console.error(err);
+                alert('Hedefler güncellenirken sunucuda bir hata oluştu.');
+              });
+            }
+          }}
+        />
+      );
     }
 
     if (currentTab === 'settings') {
-      return <Settings onBack={() => setCurrentTab('profile')} />;
+      return <Settings onBack={() => setCurrentTab('profile')} onLogout={handleLogout} />;
+    }
+
+    if (currentTab === 'errors') {
+      return <Errors onBack={() => setCurrentTab('home')} />;
+    }
+
+    if (currentTab === 'lessons') {
+      return <Lessons onBack={() => setCurrentTab('home')} />;
     }
 
     return (
@@ -108,16 +378,20 @@ function App() {
           <div style={styles.headerRow}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div 
-                style={{...styles.profileCircle, cursor: 'pointer'}}
+                style={{...styles.profileCircle, cursor: 'pointer', padding: profilePic ? 0 : '12px'}}
                 onClick={() => setCurrentTab('profile')}
               >
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="#94A3B8">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
+                {profilePic ? (
+                  <img src={profilePic} alt="Profile" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
+                ) : (
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="#94A3B8">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                )}
               </div>
               <button 
                 style={styles.logoutButton} 
-                onClick={() => setIsLoggedIn(false)}
+                onClick={handleLogout}
                 title="Çıkış Yap"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -137,7 +411,7 @@ function App() {
 
           <div style={styles.welcomeContainer}>
             <span style={styles.welcomeText}>Hoş Geldin,</span>
-            <span style={styles.nameText}>Geleceğin Şampiyonu</span>
+            <span style={styles.nameText}>{userName}</span>
             <div style={styles.levelBadge}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
@@ -166,11 +440,11 @@ function App() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="#3498DB">
                   <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/>
                 </svg>
-                <span style={styles.countdownTargetText}>Hedef: İlk 5000</span>
+                <span style={styles.countdownTargetText}>Hedef: {userTarget}</span>
               </div>
             </div>
             <div style={styles.countdownRight}>
-              <span style={styles.countdownBigText}>12</span>
+              <span style={styles.countdownBigText}>{getDaysRemaining()}</span>
               <span style={styles.countdownSmallText}>GÜN</span>
             </div>
           </div>
@@ -284,17 +558,23 @@ function App() {
             </svg>
             <span style={currentTab === 'home' ? styles.navTextActive : styles.navText}>Panel</span>
           </div>
-          <div style={styles.navItem}>
+          <div 
+            style={currentTab === 'lessons' ? styles.navItemActive : styles.navItem}
+            onClick={() => setCurrentTab('lessons')}
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
             </svg>
-            <span style={styles.navText}>İstanbul</span>
+            <span style={currentTab === 'lessons' ? styles.navTextActive : styles.navText}>Dersler</span>
           </div>
-          <div style={styles.navItem}>
+          <div 
+            style={currentTab === 'errors' ? styles.navItemActive : styles.navItem}
+            onClick={() => setCurrentTab('errors')}
+          >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>
             </svg>
-            <span style={styles.navText}>Hatalar</span>
+            <span style={currentTab === 'errors' ? styles.navTextActive : styles.navText}>Hatalar</span>
           </div>
           <div 
             style={currentTab === 'profile' ? styles.navItemActive : styles.navItem}

@@ -20,6 +20,15 @@
 
 ## 3. Fonksiyonel Gereksinimler (Teknik Detaylandırılmış)
 
+### FR0: Onboarding (Öğrenciyi Tanıma) Akışı
+Sistemin doğru çalışması için kullanıcıyı iyi tanıması gerekir. Kullanıcı uygulamaya kayıt olduktan hemen sonra, sıkıcı formlar yerine oyunlaştırılmış (gamified) bir kart akışıyla karşılaşır.
+* **Açıklama:** Öğrencinin hedeflerini ve çalışma alışkanlıklarını öğrenmek için sorulan 4 temel soru kartı:
+  1. **Hedef:** (Örn: İlk 5000, Tıp Fakültesi, Mühendislik)
+  2. **Haftalık Müsaitlik:** (Örn: 10-20 saat, 20-30 saat)
+  3. **Ağırlık Verilecek Dersler:** (Örn: Matematik, Fizik - Çoklu seçim)
+  4. **Odak Vakti:** (Sabah 🌅, Öğle ☀️, Akşam 🌙)
+* **Sonuç:** Bu veriler kullanıcının profiline işlenir ve FR1'deki DARR algoritmasının temel parametrelerini oluşturur.
+
 ### FR1: DARR (Dynamic Adaptive Road Re-routing) Motoru
 Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algoritmasıdır.
 * **Açıklama:** Kullanıcı bir görevi "Atla" (Skip) dediğinde veya belirlenen sürede bitirmediğinde, sistem kalan müfredatı sınav tarihine kadar olan günlere otomatik dağıtır.
@@ -32,12 +41,12 @@ Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algo
   `L_new = Σ(Subject_volume × W_c) / (D_rem × Efficiency_factor)`
 * **Öncelik:** P0 (Kritik)
 
-### FR2: Akıllı Kronometre & Offline-First Senkronizasyon
+### FR2: Odak Modu (Esnek Kronometre) & Offline-First Senkronizasyon
 İstanbul metrosu gibi *intermittent connectivity* (kesintili bağlantı) olan yerlerde kullanıcı deneyimi sıfır hatayla çalışmalıdır.
-* **Açıklama:** Pomodoro tabanlı çalışma takibi. Uygulama "Background"a düştüğünde veya uçak moduna alındığında sayaç kesilmemelidir.
-* **Local Storage:** Tüm çalışma seansları ve kronometre verileri SQLite veya Room/CoreData üzerinde tutulur.
-* **Synchronization Logic (Conflict Resolution):** Eğer `local_timestamp > server_timestamp` ise, lokal veri sunucuyu ezer (Override). Eğer kronometre çalışırken internet giderse, `AppBackground` eventi tetiklendiğinde `start_time` cihazın sistem saatinden alınarak kaydedilir.
-* **Background Tasks:** İnternet geldiği an WorkManager (Android) veya Background Tasks (iOS) üzerinden kuyruktaki veriler (Queue) sunucuya asenkronize şekilde iletilir.
+* **Açıklama:** Katı Pomodoro kuralları yerine öğrenciye kontrol veren **Odak Modu**. Kullanıcı dilediğinde süreyi uzatabilir, duraklatabilir. Uygulama "Background"a düştüğünde sayaç arka planda işlemeye devam eder.
+* **Local Storage:** Tüm çalışma seansları ve kronometre verileri SQLite veya yerel state üzerinde tutulur.
+* **Synchronization Logic (Conflict Resolution):** Çevrimdışı (Offline-First) senkronizasyonda sadece zaman damgasına (timestamp) güvenilmez (öğrenci saatini değiştirebilir). Bunun yerine her satırda bir `version` veya `revision_id` tutulur. Versiyon numarası büyük olan sunucuyu günceller.
+* **Background Tasks:** İnternet geldiği an yerel kuyruktaki (Queue) tamamlanan görevler sunucuya asenkronize şekilde iletilir.
 
 ### FR3: Hata Kumbarası (Image Processing)
 * **Açıklama:** Yanlış soruların fotoğrafını çekip saklama.
@@ -56,8 +65,10 @@ Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algo
 | Tablo Adı | Alan (Field) | Tip (Type) | Açıklama |
 | :--- | :--- | :--- | :--- |
 | **Users** | `uuid` | PK (UUID) | Benzersiz kullanıcı ID. |
-| | `daily_buffer_min` | Integer | Kullanıcının kendine ayırdığı esneklik payı (dk). |
-| **Tasks** | `task_id` | PK (BigInt) | |
+| | `target_goal` | String | Onboarding'den gelen kullanıcı hedefi. |
+| | `weekly_hours` | Integer | Onboarding'den gelen haftalık çalışma saati. |
+| | `focus_time` | Enum | `morning`, `afternoon`, `evening` (Onboarding'den). |
+| **Tasks** | `task_id` | PK (UUID) | Offline-first çakışmalarını önlemek için UUID kullanılmalıdır. |
 | | `status` | Enum | `pending`, `in_progress`, `completed`, `skipped`, `failed`. |
 | | `priority_score`| Float | 0.0 - 1.0 arası algoritma puanı. |
 | **User_Stats** | `streak_count` | Integer | Ardışık gün sayısı. |
@@ -87,7 +98,7 @@ Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algo
 ### 4.3. Edge Cases ve Hata Yönetimi (Senior Yaklaşımı)
 * **Zaman Dilimi Kayması & Midnight Reset:** Kullanıcı gece 01:00'de ders çalışıyorsa, veri yeni güne değil, bir önceki güne yazılır ("Logic: Sleep as Reset"). Uygulama "Güne Devam" modunda kalır. Yeni gün (Morning Briefing) ancak kullanıcı 4 saatlik bir hareketsizlikten sonra veya manuel "Günü Bitir" dediğinde başlar.
 * **Eksik Veri (Yığılma Engelleme):** Kullanıcı 3 gün uygulamaya girmezse, DARR algoritması "Yığılma" yapmamalı, kullanıcıya *"Bazı konuları feda etme zamanı"* uyarısı çıkarmalıdır.
-* **The "Never-Ending" Task:** Kullanıcı kronometreyi açtı ve unuttu. *Çözüm:* Eğer bir görev tahmini süresinin 3 katını aşarsa, sistem *"Hala çalışıyor musun?"* bildirimi gönderir. Yanıt yoksa seansı otomatik sonlandırır ve "Geçersiz" (Invalid) olarak işaretler.
+* **The "Never-Ending" Task:** Odak Modu'nda süre uzatma özelliği olsa da, kullanıcı sayacı açık unutup gidebilir. *Çözüm:* Görev tahmini süresini çok fazla aşarsa (örneğin arka planda 3 saat çalışırsa), sistem *"Hala buralarda mısın?"* şeklinde yerel bir bildirim (Local Notification) atar. Yanıt yoksa seansı son inaktif sürede keser ve "Geçersiz" (Invalid) işaretler.
 * **Low Storage:** Hata kumbarası için fotoğraf çekerken telefon hafızası doluysa. *Çözüm:* Fotoğraf çekilmeden önce `disk_space_check` yapılır, kullanıcıya hata verilir ve düşük çözünürlüklü opsiyon sunulur.
 
 ---
@@ -102,8 +113,8 @@ Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algo
 
 ## 6. Observability, Analytics ve Başarı Metrikleri
 Ürünü Unicorn yapan, veriyi okuma şeklimizdir.
-* **Funnel Tracking:** `Onboarding_Start` -> `Subject_Selection` -> `First_Pomodoro` -> `Retention_D1`
-* **Event Tracking:** `task_completed`, `plan_rescheduled_click`, `istanbul_mode_card_swipe`
+* **Funnel Tracking:** `Onboarding_Start` -> `Subject_Selection` -> `First_Focus_Mode` -> `Retention_D1`
+* **Event Tracking:** `task_completed`, `plan_rescheduled_click`
 * **Retention:** D1, D7 ve D30 takibi.
 * **Churn Predictor:** Eğer bir kullanıcı üst üste 3 gün "Planı Kurtar" (Reschedule) butonuna basıyorsa, `is_at_risk: true` bayrağı (flag) atanır ve ona özel bir "Motivasyon Briefing"i tetiklenir.
 * **Performance Monitoring:** Algoritmanın çalışma süresi (Execution Time) her zaman `< 500ms` olmalıdır.

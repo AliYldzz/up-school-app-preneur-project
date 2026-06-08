@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const SettingItem = ({ icon, label, description, type = 'chevron', value = false, onValueChange = () => {} }) => (
+const SettingItem = ({ icon, label, description, type = 'chevron', value = false, onValueChange = () => {} }: { icon: any, label: string, description?: string, type?: string, value?: boolean, onValueChange?: (val: boolean) => void }) => (
   <TouchableOpacity style={styles.item} disabled={type === 'switch'}>
     <View style={styles.itemIcon}>
       <Ionicons name={icon} size={22} color="#475569" />

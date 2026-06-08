@@ -91,8 +91,8 @@ gantt
 ### Detaylı Faz Açıklamaları:
 * **Faz 1 (Temel Altyapı - 1. ve 2. Hafta):** PRD'deki veritabanı tablolarının (Users, Tasks, User_Stats vb. dahil) çıkarılması, Docker ile mimari kurulumu, sisteme giriş (Login) akışları.
 * **Faz 2 (DARR Yapıtaşı - 3. - 5. Hafta):** Matematiksel algoritma formüllerinin (Bilişsel Yük, Ağırlık) backend'e dökülmesi ve kritik Edge Case senaryolarının (Gece vardiyası, Midnight Reset vb.) Unit Test senaryolarıyla kapatılması.
-* **Faz 3 (Offline Deneyim - 6. - 8. Hafta):** İnternet kopmalarına dayanıklı Local Storage destekli UI, Pomodoro/Kronometre ekranları ve çakışma çözen (conflict resolving) senkronizasyon araçları.
-* **Faz 4 (Görsel İçerik - 9. ve 10. Hafta):** Etkileşimli CMS (Web) panelinin yapılıp "İstanbul Modu" verilerinin bağlanması. Hata kumbarası görsellerinin S3'e ulaştırılması.
+* **Faz 3 (Offline Deneyim - 6. - 8. Hafta):** İnternet kopmalarına dayanıklı Local Storage destekli UI, Kronometre ekranları ve çakışma çözen (conflict resolving) senkronizasyon araçları.
+* **Faz 4 (Görsel İçerik - 9. ve 10. Hafta):** Etkileşimli CMS (Web) paneli ve Hata kumbarası görsellerinin S3'e ulaştırılması.
 * **Faz 5 (Ölçme Değerlendirme - 11. ve 12. Hafta):** Rozet, deneme sonuç testleri (AYT/TYT simulasyon arayüzü), geri bildirim döngüleri. *Hala çalışıyor musun?* gibi notification uyarılarının entegresi.
 * **Faz 6 (Alpha Çıkışı - 13. ve 14. Hafta):** API hız optimizasyonu (300ms altı kuralı) ve belirlenen ilk çekirdek kullanıcı kitlesiyle beta sürüm izleme denemeleri.
 
@@ -106,6 +106,6 @@ gantt
 | **Veritabanı** | PostgreSQL | İlişkisel veriler, bağımlılıklar (Örn: Tasks, Exams) için altın standart. |
 | **Cache (Önbellek)** | Redis | API isteklerindeki hızı 300ms altına düşürmek için gerekli. |
 | **Mobil Uygulama** | Flutter | Tek kod bloğu ile iOS/Android çıkışı. Offline-First yapısı (Hive vb. ile) PRD'nin çevrimdışı önceliği için harika olur. |
-| **Medya & CDN** | AWS S3 / Firebase Storage | Yanlış soruların resimleri, "İstanbul Modu" imajlarını barındırma işlemleri. |
+| **Medya & CDN** | AWS S3 / Firebase Storage | Yanlış soruların resimleri barındırma işlemleri. |
 | **CMS Web Paneli** | React.js & TailwindCSS | Rehber Öğretmenler ve Editörler için hafif, çok temiz yönetim paneli. |
 | **Görev Dağıtıcı** | Celery | Öğrencinin test analizleri hesaplanırken asenkron işlem için; veya fotoğraflara OCR özelliği gelirse sistemi tıkamaması için. |

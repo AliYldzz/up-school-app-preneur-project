@@ -14,7 +14,7 @@ import { router } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
-const StatCard = ({ icon, label, value, color }) => (
+const StatCard = ({ icon, label, value, color }: { icon: any, label: string, value: string, color: string }) => (
   <View style={styles.statCard}>
     <View style={[styles.statIconContainer, { backgroundColor: color + '20' }]}>
       <Ionicons name={icon} size={24} color={color} />
