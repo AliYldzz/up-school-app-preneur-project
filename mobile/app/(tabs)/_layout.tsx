@@ -39,11 +39,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="lessons"
+        name="errors"
         options={{
-          title: 'Dersler',
+          title: 'Hatalarım',
           tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-            <Ionicons name={focused ? "book" : "book-outline"} size={24} color={color} />
+            <Ionicons name={focused ? "camera" : "camera-outline"} size={24} color={color} />
           ),
         }}
       />
@@ -54,6 +54,27 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
             <Ionicons name={focused ? "person" : "person-outline"} size={24} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="schedule"
+        options={{
+          title: 'Programım',
+          tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
+            <Ionicons name={focused ? "calendar" : "calendar-outline"} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="lessons"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="focus"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

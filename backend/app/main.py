@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import tasks, auth, error_vault, plan
+from app.api.endpoints import tasks, auth, error_vault, plan, admin
 from app.core.database import Base, engine
 
 # Veritabanı modellerinin yüklenmesi (tabloların otomatik oluşması için gerekli)
 from app.models.user import User
 from app.models.task import Task
 from app.models.error_vault import ErrorVault
+from app.models.task_template import TaskTemplate
 
 # Veritabanı tablolarını oluştur ve otomatik göçleri (migration) çalıştır
 from sqlalchemy import text
@@ -25,6 +26,25 @@ except Exception:
 try:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE tasks ADD COLUMN questions_wrong INTEGER DEFAULT 0"))
+except Exception:
+    pass
+
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE error_vault ADD COLUMN solution_text TEXT"))
+except Exception:
+    pass
+
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE tasks ADD COLUMN scheduled_date VARCHAR"))
+except Exception:
+    pass
+
+try:
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE task_templates ADD COLUMN exam_type VARCHAR"))
+        conn.execute(text("ALTER TABLE task_templates ADD COLUMN allowed_fields VARCHAR"))
 except Exception:
     pass
 
@@ -50,6 +70,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(error_vault.router, prefix="/api/errors", tags=["errors"])
 app.include_router(plan.router, prefix="/api/plan", tags=["plan"])
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
 @app.get("/")
 def read_root():

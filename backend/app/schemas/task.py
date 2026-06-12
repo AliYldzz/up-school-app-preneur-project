@@ -9,6 +9,7 @@ class TaskBase(BaseModel):
     subject_name: Optional[str] = None
     estimated_time: Optional[int] = 30
     actual_time: Optional[int] = 0
+    scheduled_date: Optional[str] = None
     version: Optional[int] = 1
     is_deleted: Optional[bool] = False
     
@@ -29,6 +30,7 @@ class TaskUpdate(BaseModel):
     subject_name: Optional[str] = None
     estimated_time: Optional[int] = None
     actual_time: Optional[int] = None
+    scheduled_date: Optional[str] = None
     version: Optional[int] = None
     is_deleted: Optional[bool] = None
     

@@ -105,12 +105,18 @@ def get_user_stats(current_user: User = Depends(get_current_user), db: Session =
     accuracy_rate = (total_correct / total_solved * 100.0) if total_solved > 0 else 0.0
     total_hours = round(total_minutes / 60.0, 1)
 
-    # --- Son 7 günün günlük soru istatistiği ---
+    # --- Son 7 günün günlük soru istatistiği ve Seri (Streak) Hesaplama ---
     today = datetime.utcnow().date()
     daily_buckets = {today - timedelta(days=i): 0 for i in range(6, -1, -1)}  # 6 gün önce → bugün
 
+    # Günleri set olarak tutalım (seri hesaplamak için)
+    active_days = set()
+    
+    # Ders bazlı istatistikler için
+    subject_stats = {}
+
     for t in completed_tasks:
-        # Görevin tamamlanma tarihini bul (updated_at yoksa bugün say)
+        # Tarih işlemleri
         task_date = None
         if hasattr(t, 'updated_at') and t.updated_at:
             try:
@@ -119,21 +125,58 @@ def get_user_stats(current_user: User = Depends(get_current_user), db: Session =
                 task_date = today
         else:
             task_date = today
+            
         if task_date in daily_buckets:
             daily_buckets[task_date] += (t.questions_solved or 0)
+            
+        active_days.add(task_date)
+        
+        # Ders bazlı metrikler
+        subj = t.subject_name or "Diğer"
+        if subj not in subject_stats:
+            subject_stats[subj] = {"solved": 0, "correct": 0}
+        subject_stats[subj]["solved"] += (t.questions_solved or 0)
+        subject_stats[subj]["correct"] += (t.questions_correct or 0)
 
     raw_values = list(daily_buckets.values())
     max_val = max(raw_values) if any(v > 0 for v in raw_values) else 1
-    # 0-100 arası normalize et (grafik yüzde yüksekliği için)
     daily_chart = [round(v / max_val * 100) for v in raw_values]
     
+    # Seri (Streak) hesaplama: Bugünden veya dünden geriye doğru kaç ardışık gün var?
+    streak_days = 0
+    check_date = today
+    if check_date not in active_days:
+        check_date = today - timedelta(days=1)
+        
+    while check_date in active_days:
+        streak_days += 1
+        check_date -= timedelta(days=1)
+        
+    # Ders bazlı başarı oranını formatlama
+    subject_accuracy_list = []
+    for subj, data in subject_stats.items():
+        if data["solved"] > 0:
+            pct = round((data["correct"] / data["solved"]) * 100)
+        else:
+            pct = 0
+        subject_accuracy_list.append({
+            "name": subj,
+            "percent": pct
+        })
+    
+    # Eğer hiç ders verisi yoksa boş dönmesin, varsayılan bir ders dönsün (sıfır oranlı)
+    if not subject_accuracy_list:
+        subject_accuracy_list = [{"name": "Matematik", "percent": 0}]
+        
     return {
         "total_solved": total_solved,
         "total_correct": total_correct,
         "total_wrong": total_wrong,
         "accuracy_rate": round(accuracy_rate, 1),
         "total_hours": total_hours,
-        "daily_chart": daily_chart
+        "daily_chart": daily_chart,
+        "streak_days": streak_days,
+        "subject_accuracy": subject_accuracy_list
     }
 
 @router.put("/me", response_model=UserResponse)
@@ -157,3 +200,10 @@ def update_me(user_update: UserUpdate, current_user: User = Depends(get_current_
     db.commit()
     db.refresh(current_user)
     return current_user
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Aktif kullanıcının hesabını ve tüm verilerini kalıcı olarak siler"""
+    db.delete(current_user)
+    db.commit()
+    return None

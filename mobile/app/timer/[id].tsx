@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Modal, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { store } from '../../store';
+import { API_BASE_URL } from '../../lib/config';
 
 const parseDurationToSeconds = (durationStr: string): number => {
   if (!durationStr) return 0;
@@ -32,6 +33,13 @@ export default function TimerScreen() {
   const [timeLeft, setTimeLeft] = useState(initialSeconds);
   const [isRunning, setIsRunning] = useState(true); // Auto-start
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [stats, setStats] = useState({
+    solved: '',
+    correct: '',
+    wrong: ''
+  });
 
   useEffect(() => {
     if (!isRunning && initialSeconds > 0 && timeLeft === 0) {
@@ -62,9 +70,43 @@ export default function TimerScreen() {
   };
   
   const handleFinish = () => {
+    setIsRunning(false);
     if (timerRef.current) clearInterval(timerRef.current);
+    setShowStatsModal(true);
+  };
+
+  const submitFinish = async () => {
+    const solved = parseInt(stats.solved) || 0;
+    const correct = parseInt(stats.correct) || 0;
+    const wrong = parseInt(stats.wrong) || 0;
+    
+    if (correct + wrong > solved) {
+      Alert.alert('Hata', 'Doğru ve yanlış sayısı toplam sorudan büyük olamaz.');
+      return;
+    }
+
+    try {
+      await fetch(`${API_BASE_URL}/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${store.token}`
+        },
+        body: JSON.stringify({ 
+          status: 'completed',
+          questions_solved: solved,
+          questions_correct: correct,
+          questions_wrong: wrong,
+          actual_time: Math.floor((initialSeconds - timeLeft) / 60)
+        })
+      });
+    } catch (err) {
+      console.error("Task update failed", err);
+    }
+
     store.completedTasks.add(Number(id));
     store.inProgressTasks.delete(Number(id));
+    setShowStatsModal(false);
     router.back();
   };
 
@@ -74,6 +116,54 @@ export default function TimerScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Stats Modal */}
+      <Modal visible={showStatsModal} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Görev Tamamlandı! 🎉</Text>
+            <Text style={styles.modalSubtitle}>Kısa bir değerlendirme yapalım. Kaç soru çözdün?</Text>
+            
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Toplam Çözülen Soru</Text>
+              <TextInput 
+                style={styles.input} 
+                keyboardType="numeric" 
+                placeholder="Örn: 40"
+                value={stats.solved}
+                onChangeText={(t) => setStats({...stats, solved: t})}
+              />
+            </View>
+            
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <View style={[styles.inputGroup, { flex: 1 }]}>
+                <Text style={styles.inputLabel}>Doğru</Text>
+                <TextInput 
+                  style={[styles.input, { borderColor: '#10B981', color: '#10B981' }]} 
+                  keyboardType="numeric" 
+                  placeholder="0"
+                  value={stats.correct}
+                  onChangeText={(t) => setStats({...stats, correct: t})}
+                />
+              </View>
+              <View style={[styles.inputGroup, { flex: 1 }]}>
+                <Text style={styles.inputLabel}>Yanlış</Text>
+                <TextInput 
+                  style={[styles.input, { borderColor: '#EF4444', color: '#EF4444' }]} 
+                  keyboardType="numeric" 
+                  placeholder="0"
+                  value={stats.wrong}
+                  onChangeText={(t) => setStats({...stats, wrong: t})}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.submitModalButton} onPress={submitFinish}>
+              <Text style={styles.submitModalButtonText}>Kaydet ve Bitir</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Header */}
       <View style={styles.header}>
         <MaterialCommunityIcons name="fire" size={24} color="#2ECC71" />
@@ -266,5 +356,68 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     fontSize: 16,
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1E293B',
+    textAlign: 'center',
+  },
+  submitModalButton: {
+    backgroundColor: '#2ECC71',
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  submitModalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '800',
   },
 });

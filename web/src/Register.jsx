@@ -1,42 +1,48 @@
 import React, { useState, useEffect } from 'react';
 
-const getDynamicQuestions = (answers) => {
-  const targetOptions = {
-    'Sayısal': ['Tıp Fakültesi', 'Mühendislik', 'Mimarlık', 'Diğer'],
-    'Eşit Ağırlık': ['Hukuk', 'Psikoloji', 'İşletme ve İktisat', 'Diğer'],
-    'Sözel': ['Öğretmenlik', 'Radyo ve Televizyon', 'Gastronomi', 'Diğer']
-  };
-
-  const selectedFocus = answers.focus || 'Sayısal';
-
+const getDynamicQuestions = () => {
   return [
     {
       id: 'focus',
       title: 'Hangi Alana Odaklanacaksın?',
-      options: ['Sayısal', 'Eşit Ağırlık', 'Sözel']
-    },
-    {
-      id: 'target',
-      title: 'Hedefin Nedir?',
-      options: targetOptions[selectedFocus] || targetOptions['Sayısal']
+      subtitle: 'Yapay zeka planını buna göre şekillendirecek.',
+      options: [
+        { id: 'Sayısal', icon: '🧮', desc: 'Matematik & Fen ağırlıklı' },
+        { id: 'Eşit Ağırlık', icon: '⚖️', desc: 'Matematik & Türkçe ağırlıklı' },
+        { id: 'Sözel', icon: '📚', desc: 'Türkçe & Sosyal ağırlıklı' },
+        { id: 'Dil', icon: '🌍', desc: 'Yabancı Dil ağırlıklı' }
+      ]
     },
     {
       id: 'hours',
-      title: 'Haftalık Müsaitliğin?',
-      options: ['10-20 Saat', '20-30 Saat', '30+ Saat']
+      title: 'Haftada kaç saat ayırabilirsin?',
+      subtitle: 'Gerçekçi ol, planı ona göre bölelim.',
+      options: [
+        { id: '10', title: 'Sakin Tempo', icon: '🚶‍♂️', desc: 'Haftada ~10 Saat' },
+        { id: '20', title: 'Dengeli Tempo', icon: '🏃‍♂️', desc: 'Haftada ~20 Saat' },
+        { id: '35', title: 'Sınav Canavarı', icon: '🚀', desc: 'Haftada 35+ Saat' }
+      ]
     },
     {
-      id: 'time',
-      title: 'En Verimli Olduğun Vakit?',
-      options: ['Sabah 🌅', 'Öğle ☀️', 'Akşam 🌙']
+      id: 'weak_subject',
+      title: 'Sana en çok çelme takan ders hangisi?',
+      subtitle: "AI koçun programın %60'ını buraya odaklayacak.",
+      options: [
+        { id: 'Matematik', icon: '📐' },
+        { id: 'Fizik', icon: '⚡' },
+        { id: 'Kimya', icon: '🧪' },
+        { id: 'Biyoloji', icon: '🧬' },
+        { id: 'Türkçe', icon: '📖' },
+        { id: 'Tarih', icon: '🏛️' }
+      ]
     }
   ];
 };
 
 export default function Register({ onBack, onRegisterSuccess }) {
-  const [step, setStep] = useState(0);
-  const [direction, setDirection] = useState('forward');
+  const [step, setStep] = useState(0); // 0, 1, 2 = Questions, 3 = Profile Pic, 4 = Form, 5 = AI
   const [animatingStep, setAnimatingStep] = useState(0);
+  const [isAILoading, setIsAILoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -48,66 +54,25 @@ export default function Register({ onBack, onRegisterSuccess }) {
   const [profilePic, setProfilePic] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Sync actual step with animating step to trigger re-renders and animation classes
   useEffect(() => {
     setAnimatingStep(step);
   }, [step]);
 
-  const questions = getDynamicQuestions(answers);
+  const questions = getDynamicQuestions();
 
-  const handleRegisterSubmit = (e) => {
-    e.preventDefault();
-    if (formData.fullName && formData.email && formData.password) {
-      nextStep();
-    }
-  };
-
-  const nextStep = () => {
-    setDirection('forward');
-    // We update step directly. The UI uses animatingStep to determine active card
-    setStep(prev => prev + 1);
-  };
-
-  const handleOptionClick = (questionId, option) => {
-    setAnswers(prev => ({ ...prev, [questionId]: option }));
-
-    // If there are more questions, go to next question
-    if (step < questions.length) {
-      setTimeout(() => nextStep(), 150);
-    } else {
-      // If we just answered the last question, go to the profile pic step
-      setTimeout(() => nextStep(), 150);
-    }
-  };
-
-  const compressImage = (base64Str, maxWidth = 300, maxHeight = 300) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = base64Str;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
-          }
+  const handleOptionClick = (questionId, optionId) => {
+    if (questionId === 'weak_subject') {
+      setAnswers(prev => {
+        const current = prev.weak_subjects || [];
+        if (current.includes(optionId)) {
+          return { ...prev, weak_subjects: current.filter(id => id !== optionId) };
         }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
-      };
-    });
+        return { ...prev, weak_subjects: [...current, optionId] };
+      });
+    } else {
+      setAnswers(prev => ({ ...prev, [questionId]: optionId }));
+      setTimeout(() => setStep(prev => prev + 1), 200);
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -115,33 +80,28 @@ export default function Register({ onBack, onRegisterSuccess }) {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        compressImage(reader.result)
-          .then((compressed) => {
-            setProfilePic(compressed);
-          })
-          .catch((err) => {
-            console.error("Görüntü sıkıştırılamadı:", err);
-            setProfilePic(reader.result);
-          });
+        setProfilePic(reader.result);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const finalizeRegistration = (skipped = false) => {
+  const finalizeRegistration = (e) => {
+    e.preventDefault();
+    if (!formData.fullName || !formData.email || !formData.password) return;
+
     setIsLoading(true);
-    
-    const finalPic = skipped ? null : profilePic;
     
     const payload = {
       email: formData.email,
       fullName: formData.fullName,
       password: formData.password,
       focus_area: answers.focus || 'Sayısal',
-      target_goal: answers.target || 'İlk 5000',
-      weekly_hours: answers.hours || '10-20 Saat',
-      focus_time: answers.time || 'Sabah 🌅',
-      profile_pic: finalPic
+      target_goal: `Zayıf Dersler: ${(answers.weak_subjects || []).join(', ')}`,
+      weekly_hours: `${answers.hours || '20'} Saat`,
+      focus_time: 'Sabah 🌅',
+      daily_goal_hours: parseInt(answers.hours || '20') / 7.0 || 4.0,
+      profile_pic: profilePic
     };
 
     fetch('http://127.0.0.1:8000/api/auth/register', {
@@ -153,18 +113,34 @@ export default function Register({ onBack, onRegisterSuccess }) {
     })
     .then(async (res) => {
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Kayıt başarısız oldu.');
-      }
+      if (!res.ok) throw new Error(data.detail || 'Kayıt başarısız oldu.');
       return data;
     })
     .then((data) => {
-      setIsLoading(false);
       localStorage.setItem('token', data.access_token);
-      onRegisterSuccess(finalPic, formData.fullName, answers);
+      setIsAILoading(true);
+      setStep(5); // AI Step
+      
+      return fetch('http://127.0.0.1:8000/api/tasks/', {
+        headers: {
+          'Authorization': `Bearer ${data.access_token}`
+        }
+      });
+    })
+    .then(async (res) => {
+      if (!res.ok) throw new Error("Yapay zeka planı kurarken hata oluştu.");
+      return res.json();
+    })
+    .then(() => {
+      setTimeout(() => {
+        setIsLoading(false);
+        setIsAILoading(false);
+        onRegisterSuccess(profilePic, formData.fullName, answers);
+      }, 1500);
     })
     .catch((err) => {
       setIsLoading(false);
+      setIsAILoading(false);
       alert(err.message || 'Kayıt sırasında bir hata oluştu.');
     });
   };
@@ -173,7 +149,6 @@ export default function Register({ onBack, onRegisterSuccess }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Helper function to get animation class
   const getCardClass = (cardStepIndex) => {
     if (animatingStep === cardStepIndex) return 'slide-card slide-active';
     if (animatingStep > cardStepIndex) return 'slide-card slide-out-left';
@@ -183,125 +158,156 @@ export default function Register({ onBack, onRegisterSuccess }) {
   return (
     <div style={styles.container}>
       <div style={styles.headerContainer}>
-        <h1 style={styles.title}>
-          {animatingStep === 0 ? 'Hesap Oluştur' : 'Seni Tanıyalım'}
-        </h1>
-        <p style={styles.subtitle}>
-          {animatingStep === 0
-            ? 'Sınav yolculuğuna bugün başla'
-            : animatingStep <= questions.length
-              ? `Adım ${animatingStep} / ${questions.length}`
-              : 'Son Dokunuş!'}
-        </p>
+        {step < 5 && step > 0 && (
+          <button onClick={() => setStep(step - 1)} style={styles.topBackButton}>
+            ← Geri
+          </button>
+        )}
+        {step === 0 && (
+          <button onClick={() => onBack()} style={styles.topBackButton}>
+            ← İptal
+          </button>
+        )}
+        <div style={styles.progressBar}>
+          <div style={{ ...styles.progressFill, width: `${(step / 5) * 100}%` }}></div>
+        </div>
       </div>
 
       <div className="glass-panel slide-card-container" style={styles.cardContainer}>
-
-        {/* Step 0: Registration Form */}
+        
+        {/* Step 0: Initial Form */}
         <div className={getCardClass(0)} style={{ position: animatingStep === 0 ? 'relative' : 'absolute', width: '100%' }}>
-          <form onSubmit={handleRegisterSubmit} style={styles.form}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Ad Soyad</label>
-              <input
-                type="text"
-                name="fullName"
-                placeholder="Örn: Mert Yılmaz"
-                value={formData.fullName}
-                onChange={handleChange}
-                style={styles.input}
-                required
-              />
-            </div>
+          <div style={styles.questionContainer}>
+            <h2 style={styles.questionTitle}>Yolculuğa Başlıyoruz!</h2>
+            <p style={styles.questionSubtitle}>Seni tanımak için temel bilgilerini gir.</p>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (formData.fullName && formData.email && formData.password) {
+                setStep(1);
+              }
+            }} style={styles.form}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Ad Soyad</label>
+                <input
+                  type="text"
+                  name="fullName"
+                  placeholder="Örn: Mert Yılmaz"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  style={styles.input}
+                  required
+                />
+              </div>
 
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>E-posta</label>
-              <input
-                type="email"
-                name="email"
-                placeholder="ornek@ogrenci.com"
-                value={formData.email}
-                onChange={handleChange}
-                style={styles.input}
-                required
-              />
-            </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>E-posta</label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="ornek@ogrenci.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  style={styles.input}
+                  required
+                />
+              </div>
 
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Şifre</label>
-              <input
-                type="password"
-                name="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
-                style={styles.input}
-                required
-              />
-            </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Şifre</label>
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  style={styles.input}
+                  required
+                />
+              </div>
 
-            <button type="submit" style={styles.registerButton}>
-              Kayıt Ol ve İlerle
-            </button>
-          </form>
+              <button type="submit" style={styles.registerButton}>
+                Devam Et →
+              </button>
+            </form>
+          </div>
         </div>
 
-        {/* Steps 1 to 4: Question Cards */}
+        {/* Steps 1 to 3: Question Cards */}
         {questions.map((q, index) => {
-          const cardStepIndex = index + 1;
+          const actualStep = index + 1; // 1, 2, 3
           return (
             <div
               key={q.id}
-              className={getCardClass(cardStepIndex)}
-              style={{ position: animatingStep === cardStepIndex ? 'relative' : 'absolute' }}
+              className={getCardClass(actualStep)}
+              style={{ position: animatingStep === actualStep ? 'relative' : 'absolute', width: '100%' }}
             >
               <div style={styles.questionContainer}>
                 <h2 style={styles.questionTitle}>{q.title}</h2>
-                <div style={styles.optionsList}>
+                <p style={styles.questionSubtitle}>{q.subtitle}</p>
+                
+                <div style={q.id === 'weak_subject' ? styles.gridList : styles.optionsList}>
                   {q.options.map((opt, idx) => (
                     <button
                       key={idx}
                       type="button"
                       className="onboarding-option"
-                      onClick={() => handleOptionClick(q.id, opt)}
-                      disabled={isLoading}
+                      onClick={() => handleOptionClick(q.id, opt.id)}
+                      style={{
+                        ...(q.id === 'weak_subject' 
+                            ? ((answers.weak_subjects || []).includes(opt.id) ? styles.selectedOption : {})
+                            : (answers[q.id] === opt.id ? styles.selectedOption : {})),
+                        ...(q.id === 'weak_subject' ? styles.gridCard : {})
+                      }}
                     >
-                      {opt}
+                      <span style={styles.optionIcon}>{opt.icon}</span>
+                      <div style={styles.optionTextContainer}>
+                        <span style={styles.optionTitle}>{opt.title || opt.id}</span>
+                        {opt.desc && <span style={styles.optionDesc}>{opt.desc}</span>}
+                      </div>
                     </button>
                   ))}
                 </div>
-                {isLoading && cardStepIndex === questions.length && (
-                  <p style={styles.loadingText}>Profilin hazırlanıyor...</p>
+                {q.id === 'weak_subject' && (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      if ((answers.weak_subjects || []).length > 0) {
+                        setStep(prev => prev + 1);
+                      } else {
+                        alert("Lütfen en az bir zayıf ders seçin.");
+                      }
+                    }} 
+                    style={styles.registerButton}
+                  >
+                    Devam Et →
+                  </button>
                 )}
               </div>
             </div>
           );
         })}
 
-        {/* Step 5: Profile Picture Upload */}
+        {/* Step 4: Profile Picture Upload and Finish */}
         <div
-          className={getCardClass(questions.length + 1)}
-          style={{ position: animatingStep === questions.length + 1 ? 'relative' : 'absolute', width: '100%', display: 'flex', justifyContent: 'center' }}
+          className={getCardClass(4)}
+          style={{ position: animatingStep === 4 ? 'relative' : 'absolute', width: '100%' }}
         >
           <div style={styles.questionContainer}>
             <h2 style={styles.questionTitle}>Profil Fotoğrafın</h2>
-            <p style={{ color: '#64748B', fontSize: '14px', textAlign: 'center' }}>Gülümse ve bir fotoğraf çek veya seç!</p>
+            <p style={styles.questionSubtitle}>Son adım! Bir fotoğraf seç ve planını oluşturalım.</p>
 
             <div style={styles.uploadContainer}>
               {profilePic ? (
                 <img src={profilePic} alt="Profile preview" style={styles.profilePreview} />
               ) : (
-                <div style={styles.uploadPlaceholder}>
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>
-                  </svg>
-                </div>
+                <div style={styles.uploadPlaceholder}>📸</div>
               )}
               <input
                 type="file"
                 accept="image/*"
-                capture="user"
                 onChange={handleImageUpload}
-                style={styles.fileInput}
+                style={{ display: 'none' }}
                 id="profileUpload"
               />
               <label htmlFor="profileUpload" style={styles.uploadButton}>
@@ -312,35 +318,39 @@ export default function Register({ onBack, onRegisterSuccess }) {
             <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '16px' }}>
               <button
                 type="button"
-                style={{ ...styles.registerButton, backgroundColor: '#FFFFFF', color: '#64748B', border: '1px solid #E2E8F0', marginTop: 0 }}
-                onClick={() => finalizeRegistration(true)}
+                style={styles.registerButton}
+                onClick={finalizeRegistration}
                 disabled={isLoading}
               >
-                Bu Adımı Atla
-              </button>
-              <button
-                type="button"
-                style={{
-                  ...styles.registerButton,
-                  marginTop: 0,
-                  opacity: (!profilePic || isLoading) ? 0.5 : 1,
-                  cursor: (!profilePic || isLoading) ? 'not-allowed' : 'pointer'
-                }}
-                onClick={() => finalizeRegistration(false)}
-                disabled={!profilePic || isLoading}
-              >
-                {isLoading ? 'Hazırlanıyor...' : 'Uygulamaya Başla!'}
+                {isLoading ? 'Kaydediliyor...' : 'Planımı Oluştur ✨'}
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {animatingStep === 0 && (
-        <button onClick={onBack} style={styles.backButton}>
-          Giriş Sayfasına Dön
-        </button>
-      )}
+        {/* Step 5: AI Magic Loading */}
+        <div
+          className={getCardClass(5)}
+          style={{ position: animatingStep === 5 ? 'relative' : 'absolute', width: '100%', display: 'flex', justifyContent: 'center' }}
+        >
+          <div style={styles.questionContainer}>
+            <div style={{ position: 'relative', margin: '20px 0' }}>
+              <div className="pulse-indicator" style={{ width: '80px', height: '80px', backgroundColor: 'transparent', position: 'absolute', top: -10, left: -10, zIndex: 0 }}></div>
+              <div style={{ width: '60px', height: '60px', borderRadius: '30px', backgroundColor: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, position: 'relative', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.5)' }}>
+                 <span style={{ fontSize: '30px' }}>✨</span>
+              </div>
+            </div>
+            
+            <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#10B981', textAlign: 'center', margin: 0 }}>
+              Senin İçin Harika Bir Plan Kuruyorum...
+            </h2>
+            <p style={{ color: '#E2E8F0', fontSize: '16px', textAlign: 'center', fontWeight: '500', maxWidth: '90%', lineHeight: '1.5' }}>
+              Zayıf olduğun {(answers.weak_subjects || []).join(', ')} derslerini analiz edip sana özel o ilk programı çıkarıyorum. Lütfen bekle.
+            </p>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -350,36 +360,112 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: '24px',
     minHeight: '100vh',
     width: '100%',
     maxWidth: '480px',
     margin: '0 auto',
-    background: 'transparent',
     overflowX: 'hidden',
   },
   headerContainer: {
-    textAlign: 'center',
-    marginBottom: '32px',
-    height: '60px', // fixed height to prevent jumping
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    marginBottom: '24px',
+    marginTop: '24px'
   },
-  title: {
-    fontSize: '28px',
-    fontWeight: '800',
+  topBackButton: {
+    background: 'none',
+    border: 'none',
     color: '#FFFFFF',
-    marginBottom: '8px',
+    fontSize: '16px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    padding: '0'
   },
-  subtitle: {
-    fontSize: '15px',
-    color: '#A7F3D0',
-    fontWeight: '500',
+  progressBar: {
+    flex: 1,
+    height: '8px',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: '4px',
+    overflow: 'hidden'
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#10B981',
+    transition: 'width 0.3s ease'
   },
   cardContainer: {
     width: '100%',
-    padding: '32px',
-    minHeight: '350px', // keeps consistent height during transitions
+    padding: '32px 24px',
     display: 'flex',
+    minHeight: '400px',
+  },
+  questionContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    width: '100%',
+  },
+  questionTitle: {
+    fontSize: '24px',
+    fontWeight: '800',
+    color: '#1E293B',
+    textAlign: 'center',
+    margin: '0 0 8px 0',
+  },
+  questionSubtitle: {
+    fontSize: '14px',
+    color: '#64748B',
+    textAlign: 'center',
+    margin: '0 0 32px 0',
+  },
+  optionsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    width: '100%',
+  },
+  gridList: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '16px',
+    justifyContent: 'space-between',
+    width: '100%'
+  },
+  gridCard: {
+    width: '47%',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '24px 12px'
+  },
+  selectedOption: {
+    borderColor: '#10B981',
+    backgroundColor: '#ECFDF5',
+  },
+  optionIcon: {
+    fontSize: '28px',
+    marginRight: '16px'
+  },
+  optionTextContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    textAlign: 'left'
+  },
+  optionTitle: {
+    fontSize: '16px',
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  optionDesc: {
+    fontSize: '12px',
+    color: '#64748B',
+    marginTop: '4px'
   },
   form: {
     display: 'flex',
@@ -395,72 +481,29 @@ const styles = {
   label: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#243B55',
+    color: '#1E293B',
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: '12px',
-    border: '1px solid #CBD5E1',
-    padding: '12px 16px',
+    backgroundColor: '#F8FAFC',
+    borderRadius: '16px',
+    border: '1px solid #E2E8F0',
+    padding: '16px',
     fontSize: '16px',
     outline: 'none',
-    transition: 'border-color 0.2s',
     width: '100%',
   },
   registerButton: {
-    backgroundColor: '#2ECC71',
+    backgroundColor: '#10B981',
     color: '#FFFFFF',
     fontSize: '16px',
-    fontWeight: '700',
+    fontWeight: '800',
     padding: '16px',
     borderRadius: '16px',
     border: 'none',
     cursor: 'pointer',
     marginTop: '12px',
-    boxShadow: '0 4px 14px rgba(46, 204, 113, 0.4)',
-    transition: 'transform 0.1s',
+    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
     width: '100%',
-  },
-  backButton: {
-    marginTop: '24px',
-    background: 'none',
-    border: 'none',
-    color: '#64748B',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-  },
-  questionContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '28px',
-    width: '100%',
-  },
-  questionTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
-    color: '#FFFFFF',
-    background: 'linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%)',
-    textAlign: 'center',
-    margin: 0,
-    lineHeight: '1.4',
-    padding: '16px 20px',
-    borderRadius: '16px',
-    width: '100%',
-    boxShadow: '0 4px 10px rgba(30, 58, 138, 0.15)',
-  },
-  optionsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-    width: '100%',
-  },
-  loadingText: {
-    marginTop: '16px',
-    fontSize: '14px',
-    color: '#3498DB',
-    fontWeight: '600',
   },
   uploadContainer: {
     display: 'flex',
@@ -478,6 +521,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    fontSize: '40px'
   },
   profilePreview: {
     width: '120px',
@@ -485,10 +529,6 @@ const styles = {
     borderRadius: '60px',
     objectFit: 'cover',
     border: '4px solid #10B981',
-    boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)',
-  },
-  fileInput: {
-    display: 'none',
   },
   uploadButton: {
     backgroundColor: '#E0F2FE',
@@ -498,6 +538,5 @@ const styles = {
     fontSize: '14px',
     fontWeight: '700',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
   }
 };

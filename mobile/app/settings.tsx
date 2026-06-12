@@ -6,11 +6,14 @@ import {
   ScrollView, 
   TouchableOpacity, 
   Switch,
-  Platform 
+  Platform,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { store } from '../store';
+import { API_BASE_URL } from '../lib/config';
 
 const SettingItem = ({ icon, label, description, type = 'chevron', value = false, onValueChange = () => {} }: { icon: any, label: string, description?: string, type?: string, value?: boolean, onValueChange?: (val: boolean) => void }) => (
   <TouchableOpacity style={styles.item} disabled={type === 'switch'}>
@@ -36,6 +39,33 @@ const SettingItem = ({ icon, label, description, type = 'chevron', value = false
 export default function SettingsScreen() {
   const [notifications, setNotifications] = React.useState(true);
   const [darkMode, setDarkMode] = React.useState(false);
+
+  const handleAccountDelete = () => {
+    Alert.alert(
+      "Emin misiniz?",
+      "Hesabınızı silerseniz, tüm görevleriniz, hata kumbaranız ve gelişiminiz tamamen silinecek. Bu işlem geri alınamaz.",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        { 
+          text: "Sil", 
+          style: "destructive", 
+          onPress: () => {
+            fetch(`${API_BASE_URL}/api/auth/me`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${store.token}` }
+            })
+            .then(() => {
+              store.token = null;
+              router.replace('/');
+            })
+            .catch(err => {
+              Alert.alert('Hata', 'Hesap silinirken bir hata oluştu.');
+            });
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -86,7 +116,25 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={() => router.replace('/')}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Tehlikeli Bölge</Text>
+          <View style={[styles.sectionCard, { borderColor: '#FEE2E2' }]}>
+            <TouchableOpacity style={styles.item} onPress={handleAccountDelete}>
+              <View style={[styles.itemIcon, { backgroundColor: '#FEF2F2' }]}>
+                <Ionicons name="trash-outline" size={22} color="#EF4444" />
+              </View>
+              <View style={styles.itemContent}>
+                <Text style={[styles.itemLabel, { color: '#EF4444' }]}>Hesabımı Kalıcı Olarak Sil</Text>
+                <Text style={styles.itemDescription}>Tüm verilerin geri döndürülemez şekilde silinir.</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={() => {
+            store.token = null;
+            router.replace('/');
+        }}>
           <Text style={styles.logoutText}>Oturumu Kapat</Text>
         </TouchableOpacity>
       </ScrollView>

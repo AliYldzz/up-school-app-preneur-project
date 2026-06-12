@@ -52,9 +52,6 @@ Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algo
 * **Açıklama:** Yanlış soruların fotoğrafını çekip saklama.
 * **Teknik Kriter:** Fotoğraflar cihazda optimize edilerek (sıkıştırılarak) saklanmalı. Etiketleme (Ders, Konu, Zorluk) metadata olarak tutulmalı.
 
-### FR4: İstanbul Modu (Micro-Learning)
-* **Açıklama:** Kısa süreli (3-5 dk) tüketilebilecek özet içerikler.
-* **Teknik Kriter:** Bu içerikler uygulama ilk açıldığında "Pre-fetch" edilmeli, böylece metroda (offline) anlık erişilebilir olmalı.
 
 ---
 
@@ -81,7 +78,7 @@ Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algo
 ### 4.2. API ve State Management
 * **Backend Framework:** API geliştirme sürecinde FastAPI kullanılacaktır (Bkz: [fastapi docs](https://fastapi.tiangolo.com/)).
 * **State:** Uygulama, kullanıcının o anki "State"ini (Çalışıyor, Mola, Briefing Bekliyor) global bir state manager (Redux/Bloc vb.) ile takip etmelidir.
-* **Latency:** API yanıt süreleri 300ms altında olmalı. "İstanbul Modu" kartları için CDN kullanılmalı.
+* **Latency:** API yanıt süreleri 300ms altında olmalı.
 * **API Kontratı - POST `/v1/plan/reschedule`**
   * Kullanıcı planı bozduğunda veya gün sonu geldiğinde tetiklenir.
   * **Request Body:**

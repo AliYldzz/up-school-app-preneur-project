@@ -67,23 +67,57 @@ def reschedule_plan(
             "priority_score": t.priority_score
         })
 
-    # 4. DARR Motorunu çalıştır
-    optimized_tasks = run_darr_algorithm(
-        remaining_days=r_days,
-        weekly_hours_limit=weekly_limit,
-        daily_goal_hours=daily_goal,
-        current_energy_level=payload.current_energy_level,
-        tasks_to_schedule=task_dicts
-    )
+    # 4. Yapay Zeka (Gemini) ile yeniden planlamayı dene
+    from app.core.config import GEMINI_API_KEY
+    from app.core.ai_service import reschedule_study_plan
+    
+    use_fallback = True
+    optimized_tasks = []
+    
+    if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
+        try:
+            # Yapılamayan görevleri ve diğer görevleri listele
+            incomplete_list = [t for t in task_dicts if t["id"] in (payload.incomplete_task_ids or [])]
+            other_list = [t for t in task_dicts if t["id"] not in (payload.incomplete_task_ids or [])]
+            
+            ai_optimized = reschedule_study_plan(
+                remaining_days=r_days,
+                target_goal=current_user.target_goal or "İlk 5000",
+                focus_area=current_user.focus_area or "Sayısal",
+                energy_level=payload.current_energy_level or 3,
+                incomplete_tasks=incomplete_list,
+                other_tasks=other_list
+            )
+            
+            optimized_tasks = ai_optimized
+            use_fallback = False
+            message_prefix = "AI (Gemini) DARR motoru"
+        except Exception as e:
+            print(f"[Gemini AI Reschedule Fallback] Hata: {e}")
+            # Hata durumunda yerel DARR motoru çalışacak
+            
+    if use_fallback:
+        # Fallback: Kural tabanlı matematiksel DARR motorunu çalıştır
+        optimized_tasks = run_darr_algorithm(
+            remaining_days=r_days,
+            weekly_hours_limit=weekly_limit,
+            daily_goal_hours=daily_goal,
+            current_energy_level=payload.current_energy_level,
+            tasks_to_schedule=task_dicts
+        )
+        message_prefix = "Kural tabanlı DARR motoru"
 
-    # 5. Veritabanındaki öncelik puanlarını güncelle
-    # Her optimize edilen görevin yeni priority_score değerini veritabanına yazıyoruz.
+    # 5. Veritabanındaki öncelik puanlarını ve süreleri güncelle
     for opt_task in optimized_tasks:
         db.query(Task).filter(
             Task.id == opt_task["id"],
             Task.user_id == current_user.id
         ).update(
-            {"priority_score": opt_task["priority_score"], "version": Task.version + 1},
+            {
+                "priority_score": opt_task["priority_score"],
+                "estimated_time": opt_task.get("estimated_time", 60),
+                "version": Task.version + 1
+            },
             synchronize_session=False
         )
     db.commit()
@@ -98,6 +132,6 @@ def reschedule_plan(
     db_updated_tasks.sort(key=lambda x: x.priority_score, reverse=True)
 
     return {
-        "message": f"DARR motoru planınızı başarıyla optimize etti. Kalan gün: {r_days}",
+        "message": f"{message_prefix} planınızı başarıyla optimize etti. Kalan gün: {r_days}",
         "scheduled_tasks": db_updated_tasks
     }

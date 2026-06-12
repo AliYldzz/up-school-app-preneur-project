@@ -26,15 +26,41 @@ def create_error(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Kullanıcı için yeni bir hatalı soru kaydı oluşturur"""
+    """Kullanıcı için yeni bir hatalı soru kaydı oluşturur. Resim varsa AI ile çözer ve etiketler."""
+    subject = error_in.subject_name
+    topic = error_in.topic_name
+    difficulty = error_in.difficulty or "Orta"
+    ocr = error_in.ocr_text
+    solution = error_in.solution_text
+
+    # Yapay zeka entegrasyonu
+    from app.core.config import GEMINI_API_KEY
+    from app.core.ai_service import solve_and_analyze_question
+
+    if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here" and error_in.image_data:
+        try:
+            # Resim verisi local SVG mock verisi değilse AI çözümlemeyi dene
+            if not error_in.image_data.startswith("data:image/svg+xml"):
+                ai_result = solve_and_analyze_question(error_in.image_data)
+                
+                subject = ai_result.get("subject_name", subject)
+                topic = ai_result.get("topic_name", topic)
+                difficulty = ai_result.get("difficulty", difficulty)
+                ocr = ai_result.get("ocr_text", ocr)
+                solution = ai_result.get("solution_text", solution)
+        except Exception as e:
+            print(f"[Gemini AI Question Solver Fallback] Hata: {e}")
+            # Hata durumunda kullanıcı girişleri ile devam edecek
+
     db_error = ErrorVault(
         user_id=current_user.id,
         image_url=error_in.image_url,
         image_data=error_in.image_data,
-        subject_name=error_in.subject_name,
-        topic_name=error_in.topic_name,
-        difficulty=error_in.difficulty,
-        ocr_text=error_in.ocr_text
+        subject_name=subject,
+        topic_name=topic,
+        difficulty=difficulty,
+        ocr_text=ocr,
+        solution_text=solution
     )
     db.add(db_error)
     db.commit()
@@ -86,6 +112,8 @@ def update_error(
         db_error.difficulty = error_update.difficulty
     if error_update.ocr_text is not None:
         db_error.ocr_text = error_update.ocr_text
+    if error_update.solution_text is not None:
+        db_error.solution_text = error_update.solution_text
         
     db.commit()
     db.refresh(db_error)

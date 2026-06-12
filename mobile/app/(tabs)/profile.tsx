@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -6,11 +6,15 @@ import {
   ScrollView, 
   Image, 
   TouchableOpacity, 
-  Dimensions 
+  Dimensions,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import { store } from '../../store';
+import { API_BASE_URL } from '../../lib/config';
 
 const { width } = Dimensions.get('window');
 
@@ -25,8 +29,104 @@ const StatCard = ({ icon, label, value, color }: { icon: any, label: string, val
 );
 
 export default function ProfileScreen() {
+  const [userInfo, setUserInfo] = useState({
+    fullName: 'Geleceğin Şampiyonu',
+    targetGoal: 'İlk 5000',
+    focusArea: 'Sayısal',
+    profilePic: null as string | null
+  });
+
+  const [stats, setStats] = useState({
+    total_solved: 0,
+    total_hours: 0,
+    streak_days: 0,
+    accuracy_rate: 0,
+    subject_accuracy: [] as any[],
+    daily_chart: [] as number[]
+  });
+
+  const loadUserData = () => {
+    if (!store.token) return;
+    fetch(`${API_BASE_URL}/api/auth/me`, {
+      headers: {
+        'Authorization': `Bearer ${store.token}`
+      }
+    })
+    .then(res => {
+      if (res.ok) return res.json();
+      throw new Error();
+    })
+    .then(data => {
+      setUserInfo({
+        fullName: data.fullName,
+        targetGoal: data.target_goal,
+        focusArea: data.focus_area,
+        profilePic: data.profile_pic
+      });
+    })
+    .catch(() => {});
+
+    // Fetch Stats
+    fetch(`${API_BASE_URL}/api/auth/stats`, {
+      headers: {
+        'Authorization': `Bearer ${store.token}`
+      }
+    })
+    .then(res => res.ok ? res.json() : null)
+    .then(data => {
+      if (data) {
+        setStats({
+          total_solved: data.total_solved || 0,
+          total_hours: data.total_hours || 0,
+          streak_days: data.streak_days || 0,
+          accuracy_rate: data.accuracy_rate || 0,
+          subject_accuracy: data.subject_accuracy || [],
+          daily_chart: data.daily_chart || []
+        });
+      }
+    })
+    .catch(() => {});
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUserData();
+    }, [])
+  );
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setUserInfo(prev => ({ ...prev, profilePic: base64Image }));
+
+      // Kaydet API Call
+      fetch(`${API_BASE_URL}/api/auth/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${store.token}`
+        },
+        body: JSON.stringify({ profile_pic: base64Image })
+      }).catch(() => {
+        Alert.alert('Hata', 'Profil fotoğrafı güncellenemedi.');
+      });
+    }
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={{ paddingBottom: 100 }}
+      showsVerticalScrollIndicator={false}
+    >
       <LinearGradient
         colors={['#10B981', '#3B82F6']}
         start={{ x: 0, y: 0 }}
@@ -36,13 +136,17 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={50} color="#94A3B8" />
+              {userInfo.profilePic ? (
+                <Image source={{ uri: userInfo.profilePic }} style={{ width: 100, height: 100, borderRadius: 50 }} />
+              ) : (
+                <Ionicons name="person" size={50} color="#94A3B8" />
+              )}
             </View>
-            <TouchableOpacity style={styles.editButton}>
+            <TouchableOpacity style={styles.editButton} onPress={pickImage}>
               <Ionicons name="camera" size={20} color="#FFF" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>Geleceğin Şampiyonu</Text>
+          <Text style={styles.userName}>{userInfo.fullName}</Text>
           <View style={styles.badge}>
             <Ionicons name="star" size={14} color="#F59E0B" />
             <Text style={styles.badgeText}>Seviye 5 • Odak Ustası</Text>
@@ -54,50 +158,56 @@ export default function ProfileScreen() {
         <StatCard 
           icon="time" 
           label="Çalışma Süresi" 
-          value="124s" 
+          value={`${stats.total_hours}s`} 
           color="#3B82F6" 
         />
         <StatCard 
           icon="checkmark-circle" 
           label="Tamamlanan" 
-          value="86" 
+          value={`${stats.total_solved}`} 
           color="#10B981" 
         />
         <StatCard 
           icon="flame" 
           label="Seri" 
-          value="12 Gün" 
+          value={`${stats.streak_days} Gün`} 
           color="#EF4444" 
         />
         <StatCard 
           icon="trending-up" 
           label="Verimlilik" 
-          value="%92" 
+          value={`%${stats.accuracy_rate}`} 
           color="#8B5CF6" 
         />
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>İstatistikler</Text>
-        <View style={styles.chartPlaceholder}>
-          <LinearGradient
-            colors={['#F8FAFC', '#F1F5F9']}
-            style={styles.chartInner}
-          >
-            <Ionicons name="stats-chart" size={40} color="#CBD5E1" />
-            <Text style={styles.placeholderText}>Haftalık Performans Grafiği</Text>
-          </LinearGradient>
+        <View style={styles.chartContainer}>
+          {stats.daily_chart && stats.daily_chart.length > 0 ? (
+            <View style={styles.chartBars}>
+              {stats.daily_chart.map((val, idx) => (
+                <View key={idx} style={styles.barWrapper}>
+                  <View style={[styles.barFill, { height: `${Math.max(val, 5)}%` }]} />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <LinearGradient
+              colors={['#F8FAFC', '#F1F5F9']}
+              style={styles.chartInner}
+            >
+              <Ionicons name="stats-chart" size={40} color="#CBD5E1" />
+              <Text style={styles.placeholderText}>Henüz veri yok</Text>
+            </LinearGradient>
+          )}
         </View>
       </View>
 
       <View style={[styles.section, { backgroundColor: '#F0FDF4', marginHorizontal: 16, borderRadius: 24, padding: 20 }]}>
         <Text style={[styles.sectionTitle, { marginBottom: 20 }]}>Ders Bazlı Başarı</Text>
         
-        {[
-          { name: 'Matematik', percent: 92 },
-          { name: 'Fizik', percent: 78 },
-          { name: 'Kimya', percent: 65 }
-        ].map((item, i) => (
+        {stats.subject_accuracy && stats.subject_accuracy.length > 0 ? stats.subject_accuracy.map((item, i) => (
           <View key={i} style={styles.subjectRow}>
             <View style={styles.subjectMeta}>
               <Text style={styles.subjectName}>{item.name}</Text>
@@ -107,7 +217,9 @@ export default function ProfileScreen() {
               <View style={[styles.progressFill, { width: `${item.percent}%` }]} />
             </View>
           </View>
-        ))}
+        )) : (
+          <Text style={{ textAlign: 'center', color: '#64748B', marginVertical: 12 }}>Henüz yeterli veri yok.</Text>
+        )}
       </View>
 
       <View style={styles.section}>
@@ -120,7 +232,7 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/settings')}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => Alert.alert('Bilgi', 'Ayarlar sayfası yakında eklenecektir.')}>
           <View style={[styles.menuIcon, { backgroundColor: '#F0F9FF' }]}>
             <Ionicons name="settings" size={20} color="#0369A1" />
           </View>
@@ -128,7 +240,29 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => {
+            Alert.alert(
+              "Çıkış Yap",
+              "Hesabınızdan çıkmak istediğinize emin misiniz?",
+              [
+                { text: "İptal", style: "cancel" },
+                { 
+                  text: "Evet, Çıkış Yap", 
+                  style: "destructive",
+                  onPress: () => {
+                    store.token = null;
+                    if (router.canDismiss()) {
+                      router.dismissAll();
+                    }
+                    router.replace('/login');
+                  }
+                }
+              ]
+            );
+          }}
+        >
           <View style={[styles.menuIcon, { backgroundColor: '#FEF2F2' }]}>
             <Ionicons name="log-out" size={20} color="#EF4444" />
           </View>
@@ -250,13 +384,33 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginBottom: 16,
   },
-  chartPlaceholder: {
+  chartContainer: {
     height: 180,
-    borderRadius: 20,
-    overflow: 'hidden',
     backgroundColor: '#FFF',
+    borderRadius: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+  },
+  chartBars: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 10,
+  },
+  barWrapper: {
+    width: 24,
+    height: '100%',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    justifyContent: 'flex-end',
+    overflow: 'hidden',
+  },
+  barFill: {
+    width: '100%',
+    backgroundColor: '#3B82F6',
+    borderRadius: 12,
   },
   chartInner: {
     flex: 1,

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Any
 
 class UserStatsResponse(BaseModel):
     total_solved: int
@@ -8,3 +8,6 @@ class UserStatsResponse(BaseModel):
     accuracy_rate: float
     total_hours: float
     daily_chart: List[int]  # Son 7 günün günlük çözülen soru adedi
+    streak_days: int
+    subject_accuracy: List[Dict[str, Any]]
+

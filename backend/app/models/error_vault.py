@@ -18,8 +18,9 @@ class ErrorVault(Base):
     topic_name = Column(String, index=True, nullable=True) # Trigonometri, Optik vb.
     difficulty = Column(String, default="Orta") # Kolay, Orta, Zor
     
-    # Soru görselinden çözümlenen metin
+    # Soru görselinden çözümlenen metin ve yapay zeka çözümü
     ocr_text = Column(Text, nullable=True)
+    solution_text = Column(Text, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
 

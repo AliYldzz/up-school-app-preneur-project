@@ -6,6 +6,7 @@ import Profile from './Profile';
 import Settings from './Settings';
 import Errors from './Errors';
 import Lessons from './Lessons';
+import Admin from './Admin';
 
 const INITIAL_PROGRAM = [
   { 
@@ -64,6 +65,60 @@ function App() {
   const [activeTimerTask, setActiveTimerTask] = useState(null);
   const [program, setProgram] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [energyLevel, setEnergyLevel] = useState(3);
+  const [selectedIncompleteTasks, setSelectedIncompleteTasks] = useState([]);
+  const [isRescheduling, setIsRescheduling] = useState(false);
+
+  const openRescheduleModal = () => {
+    const incomplete = program.filter(t => t.status !== 'completed').map(t => t.id);
+    setSelectedIncompleteTasks(incomplete);
+    setEnergyLevel(3);
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleSubmit = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setIsRescheduling(true);
+    fetch('http://127.0.0.1:8000/api/plan/reschedule', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        reason: 'skipped_by_user',
+        incomplete_task_ids: selectedIncompleteTasks,
+        current_energy_level: energyLevel
+      })
+    })
+    .then(res => {
+      if (res.ok) return res.json();
+      throw new Error('Yeniden planlama başarısız oldu.');
+    })
+    .then(data => {
+      setIsRescheduling(false);
+      setShowRescheduleModal(false);
+      
+      const formatted = data.scheduled_tasks.map(ct => ({
+        id: ct.id,
+        subject: ct.subject_name,
+        title: ct.title,
+        timeRange: `${ct.estimated_time} dakika`,
+        status: ct.status,
+        color: ct.subject_name === 'MATEMATİK' ? '#3B82F6' : ct.subject_name === 'FİZİK' ? '#EF4444' : ct.subject_name === 'TÜRKÇE' ? '#8B5CF6' : '#F97316',
+        bgColor: ct.subject_name === 'MATEMATİK' ? '#EFF6FF' : ct.subject_name === 'FİZİK' ? '#FEF2F2' : ct.subject_name === 'TÜRKÇE' ? '#F5F3FF' : '#FFF7ED'
+      }));
+      setProgram(formatted);
+      triggerStatsUpdate();
+    })
+    .catch(err => {
+      setIsRescheduling(false);
+      alert(err.message || 'Plan yeniden düzenlenirken bir hata oluştu.');
+    });
+  };
   const [userStats, setUserStats] = useState({
     total_solved: 0,
     total_correct: 0,
@@ -265,7 +320,19 @@ function App() {
     }
   };
 
+  const isRouteAdmin = window.location.pathname === '/admin';
+
   if (!isLoggedIn) {
+    if (isRouteAdmin) {
+      return (
+        <div style={styles.container}>
+          <div style={{padding: '40px', textAlign: 'center'}}>
+            <h2>Admin Paneline Erişmek İçin Giriş Yapmalısınız</h2>
+            <button onClick={() => window.location.href = '/'} style={styles.celebrationButton}>Giriş Yap</button>
+          </div>
+        </div>
+      );
+    }
     if (authMode === 'register') {
       return (
         <Register 
@@ -306,6 +373,17 @@ function App() {
       );
     }
     return <Login onLoginSuccess={() => setIsLoggedIn(true)} onRegisterClick={() => setAuthMode('register')} />;
+  }
+
+  if (isRouteAdmin) {
+    return (
+      <Admin 
+        onLogout={() => {
+          handleLogout();
+          window.location.href = '/';
+        }} 
+      />
+    );
   }
 
   if (activeTimerTask) {
@@ -373,7 +451,7 @@ function App() {
     return (
       <div style={styles.content}>
         
-        <div style={styles.mainCard}>
+        <div className="glass-panel" style={styles.mainCard}>
           
           <div style={styles.headerRow}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -410,13 +488,13 @@ function App() {
           </div>
 
           <div style={styles.welcomeContainer}>
-            <span style={styles.welcomeText}>Hoş Geldin,</span>
-            <span style={styles.nameText}>{userName}</span>
+            <span style={styles.welcomeText}>Günaydın şampiyon,</span>
+            <span style={styles.nameText}>{userName}!</span>
             <div style={styles.levelBadge}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B">
                 <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
               </svg>
-              <span style={styles.levelText}>Seviye 5 • Odak Ustası</span>
+              <span style={styles.levelText}>Hedeflerine bir adım daha yakınsın 🚀</span>
             </div>
           </div>
 
@@ -451,13 +529,32 @@ function App() {
 
         </div>
 
+        {program.filter(t => t.status !== 'completed').length > 0 && (
+          <button 
+            className="glow-button hover-lift"
+            style={styles.aiMagicBtn}
+            onClick={openRescheduleModal}
+            disabled={isRescheduling}
+          >
+             <span style={styles.aiMagicIcon}>✨</span> 
+             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '12px'}}>
+                <span style={styles.aiMagicTitle}>{isRescheduling ? 'Planlanıyor...' : 'Yapay Zeka: Planı Kurtar'}</span>
+                <span style={styles.aiMagicSubtitle}>Gecikmeleri telafi et, yeni rota oluştur</span>
+             </div>
+             {isRescheduling && <div className="pulse-indicator" style={styles.loadingPulse}></div>}
+          </button>
+        )}
+
         <div style={styles.programSectionContainer}>
-          <h3 style={styles.sectionTitleLeft}>Bugünkü Görevler</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingLeft: '4px', boxSizing: 'border-box' }}>
+            <h3 style={{ ...styles.sectionTitleLeft, marginLeft: 0 }}>Bugünkü Görevler</h3>
+          </div>
           
           <div style={styles.taskList}>
             {program.map((item) => (
               <div 
                 key={item.id} 
+                className="hover-lift"
                 style={{
                   ...styles.taskCard,
                   ...((item.status === 'active' || item.status === 'paused') ? styles.taskCardActive : {}),
@@ -545,6 +642,95 @@ function App() {
         </div>
       )}
 
+      {/* Reschedule Modal */}
+      {showRescheduleModal && (
+        <div style={styles.rescheduleOverlay} onClick={() => setShowRescheduleModal(false)}>
+          <div style={styles.rescheduleModal} onClick={(e) => e.stopPropagation()}>
+            <h3 style={styles.rescheduleTitle}>Planı Yeniden Düzenle 🔄</h3>
+            <p style={styles.rescheduleSubtitle}>Bugün yapamadığın görevleri ve o anki enerji seviyeni seç, senin için kalan süreyi tekrar planlayalım.</p>
+            
+            <div style={styles.formGroup}>
+              <label style={styles.rescheduleLabel}>Mevcut Enerji Seviyen (1 - 5)</label>
+              <div style={styles.energySelector}>
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setEnergyLevel(level)}
+                    style={{
+                      ...styles.energyBtn,
+                      backgroundColor: energyLevel === level ? '#3B82F6' : '#F1F5F9',
+                      color: energyLevel === level ? '#FFFFFF' : '#475569',
+                    }}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.rescheduleLabel}>Yapılamayan Görevler</label>
+              <div style={styles.rescheduleTaskList}>
+                {program.filter(t => t.status !== 'completed').map((t) => {
+                  const isChecked = selectedIncompleteTasks.includes(t.id);
+                  return (
+                    <div 
+                      key={t.id} 
+                      onClick={() => {
+                        setSelectedIncompleteTasks(prev => 
+                          prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, t.id]
+                        );
+                      }}
+                      style={{
+                        ...styles.rescheduleTaskRow,
+                        backgroundColor: isChecked ? '#FEF2F2' : '#FFFFFF',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, textAlign: 'left' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '800', color: t.color }}>{t.subject}</span>
+                        <span style={styles.rescheduleTaskTitle}>{t.title}</span>
+                      </div>
+                      <div style={{
+                        ...styles.rescheduleCheckbox,
+                        backgroundColor: isChecked ? '#EF4444' : '#FFFFFF',
+                        borderColor: isChecked ? '#EF4444' : '#CBD5E1',
+                      }}>
+                        {isChecked && (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="4">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {program.filter(t => t.status !== 'completed').length === 0 && (
+                  <p style={{ fontSize: '13px', color: '#64748B', textAlign: 'center', margin: '12px 0' }}>Bütün görevler tamamlanmış! Yeniden planlama gerekmiyor. 🎉</p>
+                )}
+              </div>
+            </div>
+
+            <div style={styles.rescheduleActions}>
+              <button 
+                style={styles.rescheduleCancelBtn} 
+                onClick={() => setShowRescheduleModal(false)}
+                disabled={isRescheduling}
+              >
+                İptal
+              </button>
+              <button 
+                style={styles.rescheduleConfirmBtn} 
+                onClick={handleRescheduleSubmit}
+                disabled={isRescheduling || program.filter(t => t.status !== 'completed').length === 0}
+              >
+                {isRescheduling ? 'Planlanıyor...' : 'Rotayı Güncelle!'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {renderContent()}
 
       <div style={styles.bottomNavContainer}>
@@ -611,16 +797,13 @@ const styles = {
     gap: '24px',
   },
   mainCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '16px',
+    padding: '24px',
     width: '100%',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
-    border: '1px solid #E2E8F0',
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '20px',
     boxSizing: 'border-box',
+    border: 'none',
   },
   headerRow: {
     display: 'flex',
@@ -670,15 +853,17 @@ const styles = {
     alignItems: 'center',
   },
   welcomeText: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#64748B',
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#E2E8F0',
+    letterSpacing: '0.5px'
   },
   nameText: {
-    fontSize: '18px',
-    fontWeight: '800',
-    color: '#243B55',
+    fontSize: '24px',
+    fontWeight: '900',
+    color: '#FFFFFF',
     marginTop: '2px',
+    textShadow: '0 2px 4px rgba(0,0,0,0.2)'
   },
   levelBadge: {
     display: 'flex',
@@ -705,9 +890,10 @@ const styles = {
     marginBottom: '8px',
   },
   sectionTitle: {
-    fontSize: '13px',
+    fontSize: '14px',
     fontWeight: '800',
-    color: '#243B55',
+    color: '#FFFFFF',
+    textShadow: '0 1px 2px rgba(0,0,0,0.1)'
   },
   progressText: {
     fontSize: '13px',
@@ -757,13 +943,13 @@ const styles = {
   },
   taskCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: '16px',
-    padding: '16px',
+    borderRadius: '20px',
+    padding: '18px',
     display: 'flex',
     alignItems: 'center',
-    border: '1px solid #E2E8F0',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)',
-    transition: 'all 0.2s',
+    border: '1px solid rgba(255,255,255,0.8)',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   taskCardActive: {
     borderColor: '#3B82F6',
@@ -987,6 +1173,166 @@ const styles = {
     fontSize: '24px',
     top: '-50px',
     animation: 'fall linear infinite',
+  },
+  aiMagicBtn: {
+    width: '100%',
+    padding: '16px 20px',
+    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+    borderRadius: '20px',
+    border: '1px solid rgba(255,255,255,0.2)',
+    boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.4)',
+    display: 'flex',
+    alignItems: 'center',
+    cursor: 'pointer',
+    color: '#FFF',
+    marginBottom: '20px',
+    position: 'relative'
+  },
+  aiMagicIcon: {
+    fontSize: '32px',
+    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+  },
+  aiMagicTitle: {
+    fontSize: '16px',
+    fontWeight: '800',
+    letterSpacing: '0.5px'
+  },
+  aiMagicSubtitle: {
+    fontSize: '12px',
+    fontWeight: '500',
+    opacity: 0.9,
+    marginTop: '2px'
+  },
+  loadingPulse: {
+    position: 'absolute',
+    right: '24px',
+    width: '24px',
+    height: '24px',
+    backgroundColor: '#FFF'
+  },
+  rescheduleOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(4px)',
+    boxSizing: 'border-box',
+    padding: '16px',
+  },
+  rescheduleModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: '24px',
+    padding: '24px',
+    width: '100%',
+    maxWidth: '400px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+    border: '1px solid #E2E8F0',
+    boxSizing: 'border-box',
+  },
+  rescheduleTitle: {
+    fontSize: '20px',
+    fontWeight: '800',
+    color: '#1E293B',
+    margin: 0,
+  },
+  rescheduleSubtitle: {
+    fontSize: '13px',
+    color: '#64748B',
+    margin: 0,
+    lineHeight: '1.5',
+  },
+  rescheduleLabel: {
+    fontSize: '13px',
+    fontWeight: '700',
+    color: '#475569',
+  },
+  energySelector: {
+    display: 'flex',
+    gap: '8px',
+    marginTop: '8px',
+  },
+  energyBtn: {
+    flex: 1,
+    border: 'none',
+    padding: '10px 0',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '800',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+  },
+  rescheduleTaskList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    maxHeight: '180px',
+    overflowY: 'auto',
+    marginTop: '8px',
+    paddingRight: '4px',
+  },
+  rescheduleTaskRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '12px 14px',
+    borderRadius: '12px',
+    border: '1px solid #E2E8F0',
+    cursor: 'pointer',
+    userSelect: 'none',
+    transition: 'all 0.15s ease',
+  },
+  rescheduleTaskTitle: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  rescheduleCheckbox: {
+    width: '18px',
+    height: '18px',
+    borderRadius: '5px',
+    border: '2px solid',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.15s ease',
+  },
+  rescheduleActions: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '8px',
+  },
+  rescheduleCancelBtn: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    color: '#64748B',
+    border: '1px solid #E2E8F0',
+    padding: '14px 0',
+    borderRadius: '14px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
+  },
+  rescheduleConfirmBtn: {
+    flex: 2,
+    backgroundColor: '#3B82F6',
+    color: '#FFFFFF',
+    border: 'none',
+    padding: '14px 0',
+    borderRadius: '14px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)',
   }
 };
 

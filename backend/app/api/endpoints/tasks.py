@@ -5,16 +5,121 @@ from app.models.task import Task
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskResponse, TaskUpdate, SyncPayload
 from app.api.endpoints.auth import get_current_user
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
 @router.get("/", response_model=list[TaskResponse])
 def get_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Aktif kullanıcının silinmemiş görevlerini listeler (READ)"""
-    return db.query(Task).filter(
+    """Aktif kullanıcının silinmemiş görevlerini listeler (READ). Boşsa AI planı veya varsayılan planı üretir."""
+    tasks = db.query(Task).filter(
         Task.user_id == current_user.id,
         Task.is_deleted == False
     ).all()
+    
+    if not tasks:
+        # 0 görev varsa yeni plan oluştur
+        from app.core.ai_service import generate_initial_study_plan
+        from app.core.config import GEMINI_API_KEY
+        from app.models.task_template import TaskTemplate
+        
+        # Eğer API Key varsa Gemini ile oluşturmayı dene
+        if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
+            try:
+                available_templates = db.query(TaskTemplate).all()
+                
+                # ALANA GÖRE KESİN FİLTRELEME
+                user_focus = current_user.focus_area or "Sayısal"
+                filtered_templates = [
+                    t for t in available_templates 
+                    if t.allowed_fields and user_focus in t.allowed_fields
+                ]
+                
+                # Eğer nedense boş kalırsa TYT olanları ver
+                if not filtered_templates:
+                    filtered_templates = [t for t in available_templates if t.exam_type == "TYT"]
+
+                template_data = [
+                    {
+                        "id": t.id,
+                        "subject": t.subject_name,
+                        "topic": t.topic,
+                        "level": t.level,
+                        "time": t.estimated_time
+                    } for t in filtered_templates
+                ]
+
+                ai_plan = generate_initial_study_plan(
+                    fullName=current_user.fullName or "Öğrenci",
+                    focus_area=current_user.focus_area or "Sayısal",
+                    target_goal=current_user.target_goal or "İlk 5000",
+                    weekly_hours=current_user.weekly_hours or "10-20 Saat",
+                    focus_time=current_user.focus_time or "Sabah 🌅",
+                    available_tasks=template_data
+                )
+                
+                for t in ai_plan:
+                    template_id = t.get("template_id")
+                    day_offset = t.get("day_offset", 0)
+                    
+                    if template_id:
+                        template = db.query(TaskTemplate).filter(TaskTemplate.id == template_id).first()
+                        if template:
+                            target_date = (datetime.utcnow() + timedelta(days=day_offset)).strftime("%Y-%m-%d")
+                            db_task = Task(
+                                title=f"{template.topic} ({template.level})",
+                                status="pending",
+                                priority_score=t.get("priority_score", 1.0),
+                                subject_name=template.subject_name,
+                                estimated_time=template.estimated_time,
+                                actual_time=0,
+                                scheduled_date=target_date,
+                                user_id=current_user.id,
+                                version=1,
+                                is_deleted=False
+                            )
+                            db.add(db_task)
+                db.commit()
+                
+                # Tekrar veritabanından çek
+                return db.query(Task).filter(
+                    Task.user_id == current_user.id,
+                    Task.is_deleted == False
+                ).all()
+            except Exception as e:
+                print(f"[Gemini AI Plan Fallback] Hata: {e}")
+                # Hata durumunda aşağıdaki yerel plan üretimine düşecek
+        
+        # Fallback: Yerel varsayılan ders programını oluştur
+        default_program = [
+            {"subject": "MATEMATİK", "title": "Türev - Limit İlişkisi Soru Çözümü", "time": 90},
+            {"subject": "FİZİK", "title": "Modern Fizik: Fotoelektrik Olayı", "time": 90},
+            {"subject": "TÜRKÇE", "title": "Paragraf Anlam Bilgisi Denemesi", "time": 60},
+            {"subject": "BİYOLOJİ", "title": "Hücresel Solunum Tekrar", "time": 60}
+        ]
+        
+        for t in default_program:
+            db_task = Task(
+                title=t["title"],
+                status="pending",
+                priority_score=1.0,
+                subject_name=t["subject"],
+                estimated_time=t["time"],
+                actual_time=0,
+                user_id=current_user.id,
+                version=1,
+                is_deleted=False
+            )
+            db.add(db_task)
+        db.commit()
+        
+        # Tekrar veritabanından çek
+        tasks = db.query(Task).filter(
+            Task.user_id == current_user.id,
+            Task.is_deleted == False
+        ).all()
+        
+    return tasks
 
 @router.post("/", response_model=TaskResponse)
 def create_task(task: TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -26,6 +131,7 @@ def create_task(task: TaskCreate, current_user: User = Depends(get_current_user)
         subject_name=task.subject_name,
         estimated_time=task.estimated_time or 30,
         actual_time=task.actual_time or 0,
+        scheduled_date=task.scheduled_date or datetime.utcnow().strftime("%Y-%m-%d"),
         user_id=current_user.id,
         version=1,
         is_deleted=False,
@@ -65,6 +171,8 @@ def update_task(task_id: int, task: TaskUpdate, current_user: User = Depends(get
         db_task.estimated_time = task.estimated_time
     if task.actual_time is not None:
         db_task.actual_time = task.actual_time
+    if task.scheduled_date is not None:
+        db_task.scheduled_date = task.scheduled_date
     if task.is_deleted is not None:
         db_task.is_deleted = task.is_deleted
     if task.questions_solved is not None:
@@ -124,6 +232,7 @@ def sync_tasks(payload: SyncPayload, current_user: User = Depends(get_current_us
                 db_task.priority_score = client_task.priority_score
                 db_task.estimated_time = client_task.estimated_time
                 db_task.actual_time = client_task.actual_time
+                db_task.scheduled_date = client_task.scheduled_date
                 db_task.version = client_task.version
                 db_task.is_deleted = client_task.is_deleted
                 db_task.questions_solved = client_task.questions_solved or 0
@@ -140,6 +249,7 @@ def sync_tasks(payload: SyncPayload, current_user: User = Depends(get_current_us
                 subject_name=client_task.subject_name,
                 estimated_time=client_task.estimated_time or 30,
                 actual_time=client_task.actual_time or 0,
+                scheduled_date=client_task.scheduled_date or datetime.utcnow().strftime("%Y-%m-%d"),
                 user_id=current_user.id,
                 version=client_task.version or 1,
                 is_deleted=client_task.is_deleted or False,

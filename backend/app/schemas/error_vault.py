@@ -7,6 +7,7 @@ class ErrorVaultBase(BaseModel):
     topic_name: Optional[str] = None
     difficulty: Optional[str] = "Orta"
     ocr_text: Optional[str] = None
+    solution_text: Optional[str] = None
 
 class ErrorVaultCreate(ErrorVaultBase):
     image_data: Optional[str] = None # Base64 kodlanmış görsel verisi (local için)
@@ -17,6 +18,7 @@ class ErrorVaultUpdate(BaseModel):
     topic_name: Optional[str] = None
     difficulty: Optional[str] = None
     ocr_text: Optional[str] = None
+    solution_text: Optional[str] = None
 
 class ErrorVaultResponse(ErrorVaultBase):
     id: int

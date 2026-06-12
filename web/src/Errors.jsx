@@ -123,7 +123,8 @@ export default function Errors({ onBack }) {
           image: item.image_data || item.image_url || MATH_SVG,
           color: config.color,
           bgColor: config.bgColor,
-          date: new Date(item.created_at).toLocaleDateString('tr-TR')
+          date: new Date(item.created_at).toLocaleDateString('tr-TR'),
+          solution_text: item.solution_text
         };
       });
       setErrorsList(formatted);
@@ -137,22 +138,54 @@ export default function Errors({ onBack }) {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Sıkıştırma kalitesi 0.6
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          setUploadedImage(dataUrl);
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleAddError = (e) => {
     e.preventDefault();
-    if (!topic.trim()) return;
+    if (!topic.trim() || isSubmitting) return;
 
     const token = localStorage.getItem('token');
     if (!token) {
       alert('Lütfen önce giriş yapın.');
       return;
     }
+
+    setIsSubmitting(true);
 
     const payload = {
       subject_name: subject,
@@ -184,7 +217,8 @@ export default function Errors({ onBack }) {
         image: data.image_data || data.image_url || MATH_SVG,
         color: config.color,
         bgColor: config.bgColor,
-        date: 'Bugün'
+        date: 'Bugün',
+        solution_text: data.solution_text
       };
 
       setErrorsList(prev => [newError, ...prev]);
@@ -194,10 +228,16 @@ export default function Errors({ onBack }) {
       setDifficulty('Orta');
       setUploadedImage('');
       setShowAddForm(false);
+      
+      // Analiz biter bitmez çözümü ekranda göster (Modal'ı aç)
+      setSelectedError(newError);
     })
     .catch(err => {
       console.error(err);
       alert('Soru kaydedilirken bir hata oluştu.');
+    })
+    .finally(() => {
+      setIsSubmitting(false);
     });
   };
 
@@ -362,11 +402,11 @@ export default function Errors({ onBack }) {
                     </div>
                   ) : (
                     <label style={styles.uploadLabel}>
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                         <circle cx="12" cy="13" r="4"></circle>
                       </svg>
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B' }}>Soru Fotoğrafı Çek / Seç</span>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#E2E8F0' }}>Soru Fotoğrafı Çek / Seç</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -378,8 +418,13 @@ export default function Errors({ onBack }) {
                 </div>
               </div>
 
-              <button type="submit" style={styles.submitBtn}>
-                Kumbaraya At 💾
+              <button type="submit" style={styles.submitBtn} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                    <div className="pulse-indicator" style={{ width: '16px', height: '16px', backgroundColor: '#FFF' }}></div>
+                    <span>✨ Yapay Zeka Çözümlüyor...</span>
+                  </div>
+                ) : 'Kumbaraya At 💾'}
               </button>
             </form>
           </div>
@@ -420,8 +465,8 @@ export default function Errors({ onBack }) {
         {filteredList.length === 0 ? (
           <div style={styles.emptyState}>
             <span style={{ fontSize: '48px' }}>🎉</span>
-            <h4 style={{ color: '#243B55', fontWeight: '700', margin: '12px 0 4px' }}>Temiz Kumbara!</h4>
-            <p style={{ color: '#64748B', fontSize: '13px', margin: 0 }}>Burada görüntülenecek hiç yanlış soru yok.</p>
+            <h4 style={{ color: '#FFFFFF', fontWeight: '700', margin: '12px 0 4px' }}>Temiz Kumbara!</h4>
+            <p style={{ color: '#E2E8F0', fontSize: '13px', margin: 0 }}>Burada görüntülenecek hiç yanlış soru yok.</p>
           </div>
         ) : (
           <div style={styles.errorsGrid}>
@@ -483,7 +528,19 @@ export default function Errors({ onBack }) {
                 <span style={styles.modalDate}>{selectedError.date}</span>
               </div>
               
-              <h3 style={styles.modalTopic}>{selectedError.topic}</h3>
+               <h3 style={styles.modalTopic}>{selectedError.topic}</h3>
+              
+              {selectedError.solution_text && (
+                <div style={styles.solutionBoxPremium}>
+                  <div style={styles.solutionHeaderPremium}>
+                    <span style={styles.aiSparkleIcon}>✨</span>
+                    <h4 style={styles.solutionTitlePremium}>Yapay Zeka Çözüm Adımları</h4>
+                  </div>
+                  <div style={styles.solutionContentWrapper}>
+                    <p style={styles.solutionContentPremium}>{selectedError.solution_text}</p>
+                  </div>
+                </div>
+              )}
               
               <div style={styles.modalFooterRow}>
                 <span style={{
@@ -528,7 +585,7 @@ export default function Errors({ onBack }) {
 
 const styles = {
   container: {
-    backgroundColor: '#F8FAFC',
+    background: 'transparent',
     minHeight: '100vh',
     width: '100%',
     maxWidth: '440px',
@@ -541,21 +598,23 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E2E8F0',
+    backgroundColor: 'transparent',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
   },
   backButton: {
-    background: 'none',
-    border: 'none',
-    padding: '4px',
+    background: 'rgba(255,255,255,0.1)',
+    borderRadius: '50%',
+    padding: '8px',
     display: 'flex',
     alignItems: 'center',
     cursor: 'pointer',
+    border: 'none',
+    color: '#FFF'
   },
   headerTitle: {
     fontSize: '18px',
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#FFFFFF',
     margin: 0,
   },
   addButton: {
@@ -577,11 +636,11 @@ const styles = {
   kumbaraInfo: {
     display: 'flex',
     gap: '16px',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: '20px',
     padding: '16px',
-    border: '1px solid #E2E8F0',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(10px)',
   },
   kumbaraStats: {
     flex: 1,
@@ -593,28 +652,28 @@ const styles = {
   statNumber: {
     fontSize: '24px',
     fontWeight: '900',
-    color: '#3B82F6',
+    color: '#FFFFFF',
   },
   statText: {
     fontSize: '11px',
-    color: '#64748B',
+    color: '#CBD5E1',
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   formCard: {
     borderRadius: '20px',
     padding: '20px',
-    border: '1px solid #BAE6FD',
-    backgroundColor: '#F0F9FF',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(10px)',
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
-    animation: 'pulse 2s infinite',
   },
   formTitle: {
     fontSize: '16px',
     fontWeight: '800',
-    color: '#0369A1',
+    color: '#FFFFFF',
     margin: 0,
   },
   form: {
@@ -630,15 +689,15 @@ const styles = {
   label: {
     fontSize: '13px',
     fontWeight: '700',
-    color: '#0369A1',
+    color: '#E2E8F0',
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    border: '1px solid #CBD5E1',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '12px',
     padding: '12px 16px',
     fontSize: '14px',
-    color: '#1E293B',
+    color: '#FFFFFF',
     outline: 'none',
   },
   subjectTabs: {
@@ -668,9 +727,9 @@ const styles = {
     cursor: 'pointer',
   },
   uploadArea: {
-    border: '2px dashed #94A3B8',
+    border: '2px dashed rgba(255, 255, 255, 0.3)',
     borderRadius: '16px',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     padding: '16px',
     display: 'flex',
     alignItems: 'center',
@@ -920,37 +979,94 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2000,
-    backdropFilter: 'blur(4px)',
+    backdropFilter: 'blur(8px)',
+    padding: '20px',
   },
   modalContent: {
     position: 'relative',
-    maxWidth: '90%',
-    maxHeight: '80%',
+    width: '100%',
+    maxWidth: '400px',
+    maxHeight: '90vh',
     backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
-    padding: '16px',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+    borderRadius: '28px',
+    padding: '20px',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.1) inset',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
   },
   modalCloseBtn: {
     position: 'absolute',
-    top: '-40px',
-    right: '0px',
-    background: 'none',
+    top: '16px',
+    right: '16px',
+    width: '32px',
+    height: '32px',
+    borderRadius: '16px',
+    backgroundColor: '#F1F5F9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     border: 'none',
-    color: '#FFFFFF',
-    fontSize: '24px',
+    color: '#64748B',
+    fontSize: '16px',
+    fontWeight: 'bold',
     cursor: 'pointer',
+    zIndex: 10,
+    transition: 'background-color 0.2s',
   },
   modalImage: {
     width: '100%',
-    height: 'auto',
-    maxHeight: '70vh',
+    height: '100%',
+    maxHeight: '220px',
     objectFit: 'contain',
-    borderRadius: '12px',
+    borderRadius: '16px',
+    backgroundColor: '#F8FAFC',
+  },
+  solutionBoxPremium: {
+    background: 'linear-gradient(145deg, #F0F9FF 0%, #E0F2FE 100%)',
+    border: '1px solid #BAE6FD',
+    borderRadius: '20px',
+    padding: '16px',
+    marginTop: '16px',
+    boxShadow: '0 4px 15px -3px rgba(2, 132, 199, 0.1)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    maxHeight: '35vh',
+  },
+  solutionHeaderPremium: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    paddingBottom: '12px',
+    borderBottom: '1px solid rgba(2, 132, 199, 0.15)',
+  },
+  aiSparkleIcon: {
+    fontSize: '18px',
+    animation: 'pulse 2s infinite',
+  },
+  solutionTitlePremium: {
+    fontSize: '15px',
+    fontWeight: '800',
+    color: '#0369A1',
+    margin: 0,
+    letterSpacing: '-0.3px',
+  },
+  solutionContentWrapper: {
+    overflowY: 'auto',
+    paddingRight: '4px',
+  },
+  solutionContentPremium: {
+    fontSize: '14px',
+    color: '#334155',
+    lineHeight: '1.7',
+    margin: 0,
+    whiteSpace: 'pre-wrap',
+    fontWeight: '500',
   }
 };
