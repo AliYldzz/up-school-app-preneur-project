@@ -158,6 +158,29 @@ export default function RegisterScreen() {
             scheduled_date: new Date(Date.now() + (t.day_offset || 0) * 86400000).toISOString().split('T')[0]
           }));
 
+          // Add daily routines for Day 0 to Day 4
+          for (let dayOffset = 0; dayOffset <= 4; dayOffset++) {
+            const dateStr = new Date(Date.now() + dayOffset * 86400000).toISOString().split('T')[0];
+            supabaseTasks.push({
+              user_id: userId,
+              title: "30 Paragraf Sorusu [TYT]",
+              subject_name: "TÜRKÇE",
+              estimated_time: 35,
+              priority_score: 5.0,
+              status: 'pending',
+              scheduled_date: dateStr
+            });
+            supabaseTasks.push({
+              user_id: userId,
+              title: "20 Problem Sorusu [TYT]",
+              subject_name: "MATEMATİK",
+              estimated_time: 30,
+              priority_score: 5.0,
+              status: 'pending',
+              scheduled_date: dateStr
+            });
+          }
+
           return supabase.from('tasks').insert(supabaseTasks);
         })
         .then(({ error: insertTasksError }) => {

@@ -11,6 +11,10 @@ import Admin from './Admin';
 import { supabase } from './supabaseClient';
 import { rescheduleStudyPlan } from './aiService';
 
+const cleanTitle = (title) => {
+  return title ? title.replace(/\s*[\(\[](Kolay|Orta|Zor)[\)\]]/gi, '').trim() : '';
+};
+
 const INITIAL_PROGRAM = [
   { 
     id: 1, 
@@ -88,6 +92,7 @@ function App() {
   const [energyLevel, setEnergyLevel] = useState(3);
   const [selectedIncompleteTasks, setSelectedIncompleteTasks] = useState([]);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [consecutiveLowEnergyCount, setConsecutiveLowEnergyCount] = useState(0);
 
   const openRescheduleModal = () => {
     const incomplete = program.filter(t => t.status !== 'completed').map(t => t.id);
@@ -97,83 +102,103 @@ function App() {
   };
 
   const handleRescheduleSubmit = () => {
-    setIsRescheduling(true);
-    
-    let currentUser;
-    supabase.auth.getUser()
-    .then(({ data: { user } }) => {
-      if (!user) throw new Error("Giriş yapmalısınız.");
-      currentUser = user;
+    const performReschedule = () => {
+      setIsRescheduling(true);
       
-      return supabase.from('tasks')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_deleted', false);
-    })
-    .then(({ data: allTasks, error }) => {
-      if (error) throw error;
-      
-      const incomplete = allTasks.filter(t => selectedIncompleteTasks.includes(t.id));
-      const other = allTasks.filter(t => !selectedIncompleteTasks.includes(t.id) && t.status !== 'completed');
-      
-      return rescheduleStudyPlan(
-        getDaysRemaining(),
-        userTarget,
-        userFocus,
-        energyLevel,
-        incomplete,
-        other
-      );
-    })
-    .then(async (rescheduledTasks) => {
-      const today = new Date();
-      
-      const updatePromises = rescheduledTasks.map(t => {
-        const offset = t.day_offset || 0;
-        const taskDate = new Date();
-        taskDate.setDate(today.getDate() + offset);
-        const dateStr = taskDate.toISOString().split('T')[0];
+      let currentUser;
+      supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) throw new Error("Giriş yapmalısınız.");
+        currentUser = user;
         
         return supabase.from('tasks')
-          .update({
-            estimated_time: t.estimated_time,
-            priority_score: t.priority_score,
-            status: 'pending',
-            scheduled_date: dateStr
-          })
-          .eq('id', t.id);
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_deleted', false);
+      })
+      .then(({ data: allTasks, error }) => {
+        if (error) throw error;
+        
+        const incomplete = allTasks.filter(t => selectedIncompleteTasks.includes(t.id));
+        const other = allTasks.filter(t => !selectedIncompleteTasks.includes(t.id) && t.status !== 'completed');
+        
+        return rescheduleStudyPlan(
+          getDaysRemaining(),
+          userTarget,
+          userFocus,
+          energyLevel,
+          incomplete,
+          other
+        );
+      })
+      .then(async (rescheduledTasks) => {
+        const today = new Date();
+        
+        const updatePromises = rescheduledTasks.map(t => {
+          const offset = t.day_offset || 0;
+          const taskDate = new Date();
+          taskDate.setDate(today.getDate() + offset);
+          const dateStr = taskDate.toISOString().split('T')[0];
+          
+          return supabase.from('tasks')
+            .update({
+              estimated_time: t.estimated_time,
+              priority_score: t.priority_score,
+              status: 'pending',
+              scheduled_date: dateStr
+            })
+            .eq('id', t.id);
+        });
+        
+        await Promise.all(updatePromises);
+        
+        return supabase.from('tasks')
+          .select('*')
+          .eq('user_id', currentUser.id)
+          .eq('is_deleted', false);
+      })
+      .then(({ data: freshTasks, error }) => {
+        if (error) throw error;
+        
+        setIsRescheduling(false);
+        setShowRescheduleModal(false);
+        
+        const formatted = freshTasks.map(ct => ({
+          id: ct.id,
+          subject: ct.subject_name,
+          title: ct.title,
+          timeRange: `${ct.estimated_time} dakika`,
+          status: ct.status,
+          color: ct.subject_name === 'MATEMATİK' ? '#3498DB' : ct.subject_name === 'FİZİK' ? '#FF9875' : ct.subject_name === 'TÜRKÇE' ? '#005D32' : ct.subject_name === 'BİYOLOJİ' ? '#E67E22' : '#717970',
+          bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FFF3F0' : ct.subject_name === 'TÜRKÇE' ? '#EBF5EC' : ct.subject_name === 'BİYOLOJİ' ? '#FDF2E9' : '#F0F3F1'
+        }));
+        
+        setProgram(formatted);
+        triggerStatsUpdate();
+        alert('Yapay zeka planınızı güncelledi! ✨');
+      })
+      .catch(err => {
+        setIsRescheduling(false);
+        alert(err.message || 'Plan yeniden düzenlenirken bir hata oluştu.');
       });
-      
-      await Promise.all(updatePromises);
-      
-      return supabase.from('tasks')
-        .select('*')
-        .eq('user_id', currentUser.id)
-        .eq('is_deleted', false);
-    })
-    .then(({ data: freshTasks, error }) => {
-      if (error) throw error;
-      
-      setIsRescheduling(false);
-      setShowRescheduleModal(false);
-      
-      const formatted = freshTasks.map(ct => ({
-        id: ct.id,
-        subject: ct.subject_name,
-        title: ct.title,
-        timeRange: `${ct.estimated_time} dakika`,
-        status: ct.status,
-        color: ct.subject_name === 'MATEMATİK' ? '#3498DB' : ct.subject_name === 'FİZİK' ? '#FF9875' : ct.subject_name === 'TÜRKÇE' ? '#005D32' : ct.subject_name === 'BİYOLOJİ' ? '#E67E22' : '#717970',
-        bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FFF3F0' : ct.subject_name === 'TÜRKÇE' ? '#EBF5EC' : ct.subject_name === 'BİYOLOJİ' ? '#FDF2E9' : '#F0F3F1'
-      }));
-      
-      setProgram(formatted);
-      triggerStatsUpdate();
-    })
-    .catch(err => {
-      setIsRescheduling(false);
-      alert(err.message || 'Plan yeniden düzenlenirken bir hata oluştu.');
-    });
+    };
+
+    if (energyLevel <= 2) {
+      const nextCount = consecutiveLowEnergyCount + 1;
+      setConsecutiveLowEnergyCount(nextCount);
+      if (nextCount >= 3) {
+        const confirmReschedule = window.confirm(
+          "Meydan Okuma Zamanı! 🎯\n\nÜst üste 3 kez düşük enerji seviyesi seçtin. Unutma, YKS sürecinde disiplin ve süreklilik şampiyonları belirler! Biraz gayret edip bugün kendine meydan okumaya ne dersin? Yeni rotayı yine de oluşturmak istiyor musun?"
+        );
+        if (!confirmReschedule) {
+          return;
+        }
+      }
+    } else {
+      setConsecutiveLowEnergyCount(0);
+    }
+
+    performReschedule();
   };
   const [userStats, setUserStats] = useState({
     total_solved: 0,
@@ -739,7 +764,7 @@ function App() {
                       <span style={styles.timeRangeText}>{item.timeRange}</span>
                     )}
                   </div>
-                  <h4 style={styles.taskTitle}>{item.title}</h4>
+                  <h4 style={styles.taskTitle}>{cleanTitle(item.title)}</h4>
                 </div>
 
                 <div style={styles.kebabButton}>
@@ -838,7 +863,7 @@ function App() {
                       >
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, textAlign: 'left' }}>
                           <span style={{ fontSize: '11px', fontWeight: '800', color: t.color }}>{t.subject}</span>
-                          <span style={styles.rescheduleTaskTitle}>{t.title}</span>
+                          <span style={styles.rescheduleTaskTitle}>{cleanTitle(t.title)}</span>
                         </div>
                         <div style={{
                           ...styles.rescheduleCheckbox,
@@ -1011,7 +1036,7 @@ function App() {
                     >
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, textAlign: 'left' }}>
                         <span style={{ fontSize: '11px', fontWeight: '800', color: t.color }}>{t.subject}</span>
-                        <span style={styles.rescheduleTaskTitle}>{t.title}</span>
+                        <span style={styles.rescheduleTaskTitle}>{cleanTitle(t.title)}</span>
                       </div>
                       <div style={{
                         ...styles.rescheduleCheckbox,
@@ -1200,7 +1225,7 @@ function App() {
                               <span style={{...styles.timeRangeText, color: '#94A3B8'}}>{item.timeRange}</span>
                             )}
                           </div>
-                          <h4 style={{...styles.taskTitle, color: '#2E3A2F', fontSize: '15px'}}>{item.title}</h4>
+                          <h4 style={{...styles.taskTitle, color: '#2E3A2F', fontSize: '15px'}}>{cleanTitle(item.title)}</h4>
                         </div>
 
                         <div style={styles.kebabButton}>

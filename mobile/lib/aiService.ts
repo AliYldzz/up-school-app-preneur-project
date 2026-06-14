@@ -167,6 +167,71 @@ export async function solveAndAnalyzeQuestion(imageBase64: string): Promise<any>
   }
 }
 
+export const MEB_TASK_LIBRARY = [
+  // MATEMATİK (TYT)
+  { id: 1, subject_name: "MATEMATİK", topic: "Temel Kavramlar ve Sayı Kümeleri", level: "Kolay", estimated_time: 40, exam_type: "TYT" },
+  { id: 2, subject_name: "MATEMATİK", topic: "Üslü ve Köklü Sayılar", level: "Orta", estimated_time: 45, exam_type: "TYT" },
+  { id: 3, subject_name: "MATEMATİK", topic: "Mutlak Değer Kavramı ve Eşitsizlikler", level: "Orta", estimated_time: 50, exam_type: "TYT" },
+  { id: 4, subject_name: "MATEMATİK", topic: "Çarpanlara Ayırma", level: "Zor", estimated_time: 60, exam_type: "TYT" },
+  { id: 5, subject_name: "MATEMATİK", topic: "Oran-Orantı ve Problemlere Giriş", level: "Orta", estimated_time: 45, exam_type: "TYT" },
+  { id: 6, subject_name: "MATEMATİK", topic: "Hız ve Hareket Problemleri", level: "Zor", estimated_time: 60, exam_type: "TYT" },
+  
+  // MATEMATİK (AYT)
+  { id: 7, subject_name: "MATEMATİK", topic: "Fonksiyonlar - Grafik Okuma", level: "Zor", estimated_time: 50, exam_type: "AYT" },
+  { id: 8, subject_name: "MATEMATİK", topic: "Trigonometri Başlangıç", level: "Orta", estimated_time: 45, exam_type: "AYT" },
+  { id: 9, subject_name: "MATEMATİK", topic: "Türev Alma Kuralları", level: "Zor", estimated_time: 60, exam_type: "AYT" },
+  { id: 10, subject_name: "MATEMATİK", topic: "İntegralde Alan Hesaplama", level: "Zor", estimated_time: 60, exam_type: "AYT" },
+
+  // TÜRKÇE (TYT)
+  { id: 11, subject_name: "TÜRKÇE", topic: "Sözcükte Anlam ve Cümlede Anlam", level: "Kolay", estimated_time: 30, exam_type: "TYT" },
+  { id: 12, subject_name: "TÜRKÇE", topic: "Paragrafta Ana Düşünce", level: "Orta", estimated_time: 40, exam_type: "TYT" },
+  { id: 13, subject_name: "TÜRKÇE", topic: "Paragrafın Yapısı (Akışı Bozan Cümle)", level: "Zor", estimated_time: 45, exam_type: "TYT" },
+  { id: 14, subject_name: "TÜRKÇE", topic: "Ses Bilgisi (Ünlü Düşmesi, Ünsüz Benzeşmesi)", level: "Kolay", estimated_time: 30, exam_type: "TYT" },
+  { id: 15, subject_name: "TÜRKÇE", topic: "Sözcük Türleri (İsim, Sıfat, Zamir, Zarf)", level: "Orta", estimated_time: 45, exam_type: "TYT" },
+  { id: 16, subject_name: "TÜRKÇE", topic: "Cümlenin Ögeleri", level: "Orta", estimated_time: 40, exam_type: "TYT" },
+  { id: 17, subject_name: "TÜRKÇE", topic: "Yazım Kuralları ve Noktalama İşaretleri", level: "Orta", estimated_time: 35, exam_type: "TYT" },
+
+  // FİZİK (TYT)
+  { id: 18, subject_name: "FİZİK", topic: "Fizik Bilimine Giriş ve Madde Özellikleri", level: "Kolay", estimated_time: 30, exam_type: "TYT" },
+  { id: 19, subject_name: "FİZİK", topic: "İş, Güç ve Enerji", level: "Orta", estimated_time: 50, exam_type: "TYT" },
+  { id: 20, subject_name: "FİZİK", topic: "Isı, Sıcaklık ve Genleşme", level: "Orta", estimated_time: 45, exam_type: "TYT" },
+  { id: 21, subject_name: "FİZİK", topic: "Elektrostatik ve Elektrik Akımı", level: "Zor", estimated_time: 60, exam_type: "TYT" },
+  { id: 22, subject_name: "FİZİK", topic: "Optik (Yansıma, Düzlem Ayna, Kırılma)", level: "Zor", estimated_time: 60, exam_type: "TYT" },
+
+  // FİZİK (AYT)
+  { id: 23, subject_name: "FİZİK", topic: "Kuvvet ve Hareket (Newton'un Yasaları)", level: "Zor", estimated_time: 60, exam_type: "AYT" },
+  { id: 24, subject_name: "FİZİK", topic: "Basit Harmonik Hareket", level: "Orta", estimated_time: 45, exam_type: "AYT" },
+  { id: 25, subject_name: "FİZİK", topic: "Modern Fizik (Fotoelektrik Olay)", level: "Zor", estimated_time: 50, exam_type: "AYT" },
+
+  // KİMYA (TYT)
+  { id: 26, subject_name: "KİMYA", topic: "Kimya Bilimi & Atomun Yapısı", level: "Kolay", estimated_time: 30, exam_type: "TYT" },
+  { id: 27, subject_name: "KİMYA", topic: "Periyodik Sistem & Kimyasal Türler", level: "Orta", estimated_time: 45, exam_type: "TYT" },
+  
+  // KİMYA (AYT)
+  { id: 28, subject_name: "KİMYA", topic: "Organik Kimyaya Giriş", level: "Zor", estimated_time: 55, exam_type: "AYT" },
+
+  // BİYOLOJİ (TYT)
+  { id: 29, subject_name: "BİYOLOJİ", topic: "Canlıların Ortak Özellikleri & Hücre", level: "Kolay", estimated_time: 30, exam_type: "TYT" },
+  { id: 30, subject_name: "BİYOLOJİ", topic: "Canlılar Dünyası & Kalıtım", level: "Orta", estimated_time: 45, exam_type: "TYT" },
+
+  // BİYOLOJİ (AYT)
+  { id: 31, subject_name: "BİYOLOJİ", topic: "İnsan Fizyolojisi & Sistemler", level: "Zor", estimated_time: 60, exam_type: "AYT" },
+  { id: 32, subject_name: "BİYOLOJİ", topic: "Hücresel Solunum & Fotosentez", level: "Zor", estimated_time: 55, exam_type: "AYT" },
+
+  // EDEBİYAT (AYT)
+  { id: 33, subject_name: "EDEBİYAT", topic: "Edebi Sanatlar & Şiir Bilgisi", level: "Kolay", estimated_time: 35, exam_type: "AYT" },
+  { id: 34, subject_name: "EDEBİYAT", topic: "Divan Edebiyatı Sanatçıları", level: "Orta", estimated_time: 45, exam_type: "AYT" },
+  { id: 35, subject_name: "EDEBİYAT", topic: "Cumhuriyet Dönemi Türk Romanı", level: "Zor", estimated_time: 60, exam_type: "AYT" },
+
+  // TARİH (TYT)
+  { id: 36, subject_name: "TARİH", topic: "Tarih ve Zaman", level: "Kolay", estimated_time: 30, exam_type: "TYT" },
+  { id: 37, subject_name: "TARİH", topic: "Atatürkçülük ve Türk İnkılabı", level: "Zor", estimated_time: 50, exam_type: "TYT" },
+
+  // COĞRAFYA (TYT)
+  { id: 38, subject_name: "COĞRAFYA", topic: "Doğa ve İnsan & Harita Bilgisi", level: "Kolay", estimated_time: 35, exam_type: "TYT" },
+  { id: 39, subject_name: "COĞRAFYA", topic: "Türkiye'de Yer Şekilleri ve İklim", level: "Orta", estimated_time: 45, exam_type: "TYT" }
+];
+
 export async function generateInitialStudyPlan(
   fullName: string,
   focusArea: string,
@@ -174,35 +239,59 @@ export async function generateInitialStudyPlan(
   weeklyHours: string,
   focusTime: string
 ): Promise<any[]> {
+  const allowedTasks = MEB_TASK_LIBRARY.filter(t => {
+    if (focusArea === "Sayısal") {
+      return ["MATEMATİK", "FİZİK", "KİMYA", "BİYOLOJİ", "TÜRKÇE"].includes(t.subject_name);
+    } else if (focusArea === "Sözel") {
+      return ["TÜRKÇE", "EDEBİYAT", "TARİH", "COĞRAFYA"].includes(t.subject_name);
+    } else if (focusArea === "Eşit Ağırlık") {
+      return ["MATEMATİK", "TÜRKÇE", "EDEBİYAT", "TARİH", "COĞRAFYA"].includes(t.subject_name);
+    } else { // Dil
+      return ["TÜRKÇE", "MATEMATİK", "TARİH", "COĞRAFYA"].includes(t.subject_name);
+    }
+  });
+
   const prompt = `
-    Sen YKS (TYT/AYT) öğrencileri için akıllı bir planlama motorusun.
-    Öğrenci Adı: ${fullName}
-    Alanı: ${focusArea} (Sayısal, Sözel, Eşit Ağırlık, Dil)
-    Hedefi: ${targetGoal}
-    Haftalık Müsaitlik: ${weeklyHours}
-    Odak Vakti: ${focusTime}
+    Sen YKS (TYT/AYT) sınavına hazırlanan öğrenciler için profesyonel bir rehber öğretmen ve çalışma planlayıcısısın.
+    Öğrenci Bilgileri:
+    - Ad Soyad: ${fullName}
+    - Alan: ${focusArea} (Sayısal, Sözel, Eşit Ağırlık, Dil)
+    - Zayıf Dersler: ${targetGoal}
+    - Haftalık Çalışma Saati: ${weeklyHours}
+    - En Verimli Zaman Dilimi: ${focusTime}
     
-    Lütfen bu öğrenciye özel, alanı ile %100 uyumlu, önümüzdeki 5 günlük başlangıç ders çalışma programı oluştur.
+    Aşağıda sistemimizde bulunan resmi MEB görev havuzu (Task Library) yer almaktadır:
+    ${JSON.stringify(allowedTasks)}
     
-    **DERS SEÇİM KURALLARI:**
-    - Sayısal için: MATEMATİK, FİZİK, KİMYA, BİYOLOJİ, TÜRKÇE.
-    - Sözel için: TÜRKÇE, EDEBİYAT, TARİH, COĞRAFYA, FELSEFE, DİN.
-    - Eşit Ağırlık için: MATEMATİK, TÜRKÇE, EDEBİYAT, TARİH, COĞRAFYA.
-    - Dil için: YABANCI DİL, TÜRKÇE, MATEMATİK, TARİH, COĞRAFYA.
+    Lütfen bu öğrenci için önümüzdeki 5 günü kapsayan, YKS müfredatına uygun, gerçekçi ve dengeli bir başlangıç ders çalışma programı (görev listesi) hazırla.
+    En az 6, en fazla 9 görev seç.
     
-    **KESİN KURALLAR:**
-    1. Her güne en az 2, en fazla 4 ders çalışma görevi planla.
-    2. Her gün için mutlaka bir "MATEMATİK" veya "TÜRKÇE/EDEBİYAT" görevi bulunmalıdır.
-    3. Bilişsel yükü dengele: Sayısal derslerin arasına mutlaka sözel veya hafif dersler koy.
-    4. Her gün için gün sapması ("day_offset": 0 ile 4 arasında) belirle. (0: Bugün, 1: Yarın vb.)
-    5. Görev süreleri ("estimated_time") 30 ile 120 dakika arasında olmalıdır.
-    6. Her göreve bir öncelik puanı ("priority_score": 1.0 ile 5.0 arasında) ata.
+    **KESİN KURALLAR (DİKKATLE UYULACAK):**
+    1. GÖREV UYDURMAMA: Seçtiğin TÜM görevler SADECE VE SADECE yukarıdaki MEB görev havuzundan alınmalıdır. Listede olmayan yeni görev başlığı uydurma.
+    2. TRUVA ATI VE GÜVEN İNŞASI (DAY 0, 1, 2 - HAYATİ): Öğrencinin plana başladığı ilk 3 gün (day_offset: 0, 1 ve 2) tamamen Güven İnşası dönemidir. Bu günlere planlanan tüm görevler sadece öğrencinin zayıf olarak belirtmediği (yani güçlü/nötr olduğu) derslerden seçilmeli ve hepsi istisnasız 'Kolay' seviyede olmalıdır. İlk 3 güne asla zayıf ders görevi, Orta veya Zor seviyede görev yerleştirme!
+    3. ZAYIF DERSLERE YAVAŞÇA SIZMA (PROGRESSIVE EXPOSURE - DAY 3 VE SONRASI): Öğrencinin zayıf olduğunu belirttiği derslerin görevlerini plana en erken 3. gün (day_offset: 3) ve sonrasında yavaşça dahil et. Zayıf dersin ilk görevi kesinlikle 'Kolay' seviyede olmalı ve öğrencinin güçlü olduğu derslerin arasına tamponlanmalıdır.
+    4. GÜNLÜK DAĞILIM VE BLOK ÇALIŞMA: Bir güne arka arkaya en fazla 2 aynı ders görevi atanabilir. Öğrencinin zihnini taze tutmak için bir günde tek bir derse 3'ten fazla görev yığma ve aralara mutlaka farklı bir ders serpiştir.
+    5. BİLİŞSEL YÜK VE MOLA YÖNETİMİ: Asla iki ağır sayısal dersi (Örn: Matematik ve Fizik) veya iki 'Zor' görevi peş peşe koyma.
+    6. KRONOLOJİK ZORLUK İLERLEMESİ (PEDAGOJİK MANTIK): Bir dersten (Örn: Matematik) plana birden fazla görev koyacaksan, bu görevlerin gün sapmaları zorluk dereceleriyle uyumlu olmalıdır. Kolay görevin gün sapması (day_offset), aynı dersin Orta veya Zor görevinin gün sapmasından kesinlikle küçük (yani takvimde daha önce) olmalıdır.
+    7. KONU ÖN KOŞUL ZİNCİRİ: Sarmal yapı gereği şu ön koşul zincirlerine KESİNLİKLE uyulmalıdır:
+       - Matematik: 'Fonksiyonlar' planlanmadan 'Türev'; 'Türev' planlanmadan 'İntegral' konusu asla planlanamaz! (Fonksiyonlar <= Türev <= İntegral gün sapması sıralamasıyla).
+       - Fizik: 'Newton\'un Hareket Yasaları' planlanmadan 'Basit Harmonik Hareket' planlanamaz!
+       - Kimya: 'Kimya Bilimi & Atomun Yapısı' planlanmadan 'Organik Kimya' planlanamaz!
+       - Biyoloji: 'Canlıların Ortak Özellikleri & Hücre' planlanmadan 'İnsan Fizyolojisi & Sistemler' planlanamaz!
+    8. GÜNLERE DAĞITIM VE LİMİT: Her görev için 0 ile 4 arasında bir "day_offset" (gün sapması) belirle. (0: Bugün, 1: Yarın, vb.)
     
+    DİKKAT EDİLECEK ÖRNEK SENARYOLAR (FEW-SHOT PROMPTING):
+    - Hatalı Planlama (Zayıf Ders Baskısı): [Matematik-Zor (Zayıf Ders, day_offset: 0), Türkçe-Kolay (day_offset: 0)] -> Hata: İlk güne zayıf ders ve Zor seviye görev konmuş. Zayıf dersler en erken 3. gün (day_offset: 3) gelmelidir.
+    - Hatalı Planlama (Sıralama Hatası): [Fizik-Kolay (day_offset: 2), Fizik-Orta (day_offset: 0)] -> Hata: Orta seviye, Kolay seviyeden daha önce planlanmış.
+    - Doğru Planlama (Pedagojik Güven & Sızma): [Türkçe-Kolay (Güçlü/Nötr, day_offset: 0), Fizik-Kolay (Güçlü/Nötr, day_offset: 1), Türkçe-Orta (day_offset: 2), Matematik-Kolay (Zayıf Ders, day_offset: 3)] -> Harika: İlk 3 gün güçlü/nötr derslerle güven inşası yapılmış, zayıf olan Matematik dersi 3. gün kolay bir şekilde sızdırılmıştır.
+
     Yanıtını sadece ve sadece belirtilen JSON formatında ver. Başka hiçbir açıklama, markdown işareti veya ek metin ekleme.
+    JSON formatında "title" alanı için havuzdaki "topic" değerinin sonuna parantez içinde zorluk seviyesini ve köşeli parantez içinde sınav türünü ekle: "topic (level) [exam_type]" formatında olmalı (örn: "Temel Kavramlar ve Sayı Kümeleri (Kolay) [TYT]").
+    
     JSON Formatı:
     [
       {
-        "title": "Görev Başlığı (Örn: Fonksiyonlar Soru Çözümü)",
+        "title": "Görev Başlığı (örn: Temel Kavramlar ve Sayı Kümeleri (Kolay) [TYT])",
         "subject_name": "Ders Adı (MATEMATİK, FİZİK, vb.)",
         "estimated_time": TAHMİNİ_SÜRE_DAKİKA,
         "priority_score": ÖNCELİK_PUANI,
@@ -236,10 +325,10 @@ export async function generateInitialStudyPlan(
   } catch (error) {
     console.error("AI Initial Plan Error, falling back:", error);
     return [
-      { title: "Matematik Temel Tekrar", subject_name: "MATEMATİK", estimated_time: 90, priority_score: 3.0, day_offset: 0 },
-      { title: "Paragraf Hız Çalışması", subject_name: "TÜRKÇE", estimated_time: 45, priority_score: 4.0, day_offset: 0 },
-      { title: "Alan Ders Çalışması", subject_name: focusArea === "Sayısal" ? "FİZİK" : "EDEBİYAT", estimated_time: 90, priority_score: 3.0, day_offset: 1 },
-      { title: "Problem Rutini", subject_name: "MATEMATİK", estimated_time: 45, priority_score: 4.0, day_offset: 1 },
+      { title: "Temel Kavramlar ve Sayı Kümeleri (Kolay) [TYT]", subject_name: "MATEMATİK", estimated_time: 40, priority_score: 3.0, day_offset: 0 },
+      { title: "Sözcükte Anlam ve Cümlede Anlam (Kolay) [TYT]", subject_name: "TÜRKÇE", estimated_time: 30, priority_score: 4.0, day_offset: 0 },
+      { title: "Fizik Bilimine Giriş ve Madde Özellikleri (Kolay) [TYT]", subject_name: "FİZİK", estimated_time: 30, priority_score: 3.0, day_offset: 1 },
+      { title: "Üslü ve Köklü Sayılar (Orta) [TYT]", subject_name: "MATEMATİK", estimated_time: 45, priority_score: 4.0, day_offset: 2 },
     ];
   }
 }
