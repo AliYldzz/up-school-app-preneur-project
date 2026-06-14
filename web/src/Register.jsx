@@ -118,34 +118,71 @@ export default function Register({ onBack, onRegisterSuccess }) {
     .then(({ data: sbData, error: sbError }) => {
       if (sbError) throw sbError;
       
-      return fetch(`${API_BASE_URL}/api/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Kayıt başarısız oldu.');
-        return { data, sbData };
-      });
+      const userId = sbData.user.id;
+      const profileData = {
+        id: userId,
+        email: formData.email,
+        fullName: formData.fullName,
+        focus_area: answers.focus || 'Sayısal',
+        target_goal: `Zayıf Dersler: ${(answers.weak_subjects || []).join(', ')}`,
+        weekly_hours: `${answers.hours || '20'} Saat`,
+        focus_time: 'Sabah 🌅',
+        daily_goal_hours: parseInt(answers.hours || '20') / 7.0 || 4.0,
+        profile_pic: profilePic
+      };
+      
+      return supabase
+        .from('users')
+        .upsert(profileData)
+        .then(({ error: upsertError }) => {
+          if (upsertError) throw new Error(upsertError.message);
+          return { sbData, userId };
+        });
     })
-    .then(({ data, sbData }) => {
-      const token = sbData.session?.access_token || data.access_token;
-      localStorage.setItem('token', token);
+    .then(({ sbData, userId }) => {
+      const token = sbData.session?.access_token;
+      if (token) {
+        localStorage.setItem('token', token);
+      }
       setIsAILoading(true);
       setStep(5); // AI Step
       
-      return fetch(`${API_BASE_URL}/api/tasks/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const initialTasks = [
+        { 
+          user_id: userId,
+          subject_name: 'MATEMATİK', 
+          title: 'Türev - Limit İlişkisi Soru Çözümü',
+          estimated_time: 90,
+          status: 'completed'
+        },
+        { 
+          user_id: userId,
+          subject_name: 'FİZİK', 
+          title: 'Modern Fizik: Fotoelektrik Olayı',
+          estimated_time: 90,
+          status: 'active'
+        },
+        { 
+          user_id: userId,
+          subject_name: 'TÜRKÇE', 
+          title: 'Paragraf Anlam Bilgisi Denemesi',
+          estimated_time: 60,
+          status: 'pending'
+        },
+        { 
+          user_id: userId,
+          subject_name: 'BİYOLOJİ', 
+          title: 'Hücresel Solunum Tekrar',
+          estimated_time: 60,
+          status: 'pending'
         }
-      });
-    })
-    .then(async (res) => {
-      if (!res.ok) throw new Error("Yapay zeka planı kurarken hata oluştu.");
-      return res.json();
+      ];
+      return supabase
+        .from('tasks')
+        .insert(initialTasks)
+        .then(({ error: tasksError }) => {
+          if (tasksError) throw new Error(tasksError.message);
+        });
     })
     .then(() => {
       setTimeout(() => {

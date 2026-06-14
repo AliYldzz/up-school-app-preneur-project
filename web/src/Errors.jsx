@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from './config';
+import { supabase } from './supabaseClient';
+import { solveAndAnalyzeQuestion } from './aiService';
 
 // Varsayılan mock SVG soruları (yüksek kaliteli ve gerçekçi çizimler)
 const MATH_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200" fill="none">
@@ -98,21 +100,20 @@ export default function Errors({ onBack }) {
     'TÜRKÇE': { color: '#8B5CF6', bgColor: '#F5F3FF' }
   };
 
-  // API'den hatalı soruları çek
+  // Supabase'den hatalı soruları çek
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    fetch(`${API_BASE_URL}/api/errors/`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+    supabase.auth.getUser()
+    .then(({ data: { user } }) => {
+      if (!user) return;
+      return supabase.from('errors')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
     })
-    .then(res => {
-      if (res.ok) return res.json();
-      throw new Error('Hatalar yüklenemedi.');
-    })
-    .then(data => {
+    .then(({ data, error }) => {
+      if (error) throw error;
+      if (!data) return;
+      
       const formatted = data.map(item => {
         const config = subjectsConfig[item.subject_name] || { color: '#64748B', bgColor: '#F1F5F9' };
         return {
@@ -131,7 +132,7 @@ export default function Errors({ onBack }) {
       setErrorsList(formatted);
     })
     .catch(err => {
-      console.error('API Error:', err);
+      console.error('Supabase load errors error:', err);
     });
   }, []);
 
@@ -180,34 +181,33 @@ export default function Errors({ onBack }) {
     e.preventDefault();
     if (!topic.trim() || isSubmitting) return;
 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('Lütfen önce giriş yapın.');
-      return;
-    }
-
     setIsSubmitting(true);
 
-    const payload = {
-      subject_name: subject,
-      topic_name: topic,
-      difficulty: difficulty,
-      image_data: uploadedImage || MATH_SVG // base64 görsel verisi veya varsayılan
-    };
-
-    fetch(`${API_BASE_URL}/api/errors/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
+    let currentUser;
+    supabase.auth.getUser()
+    .then(({ data: { user } }) => {
+      if (!user) throw new Error("Lütfen önce giriş yapın.");
+      currentUser = user;
+      
+      const imageToAnalyze = uploadedImage || MATH_SVG;
+      return solveAndAnalyzeQuestion(imageToAnalyze);
     })
-    .then(res => {
-      if (res.ok) return res.json();
-      throw new Error('Soru kaydedilemedi.');
+    .then(aiResult => {
+      const payload = {
+        user_id: currentUser.id,
+        subject_name: subject,
+        topic_name: topic,
+        difficulty: difficulty,
+        image_data: uploadedImage || MATH_SVG,
+        ocr_text: aiResult.ocr_text,
+        solution_text: aiResult.solution_text
+      };
+      
+      return supabase.from('errors').insert(payload).select('*').single();
     })
-    .then(data => {
+    .then(({ data, error }) => {
+      if (error) throw error;
+      
       const config = subjectsConfig[subject] || { color: '#64748B', bgColor: '#F1F5F9' };
       const newError = {
         id: data.id,
@@ -230,12 +230,11 @@ export default function Errors({ onBack }) {
       setUploadedImage('');
       setShowAddForm(false);
       
-      // Analiz biter bitmez çözümü ekranda göster (Modal'ı aç)
       setSelectedError(newError);
     })
     .catch(err => {
       console.error(err);
-      alert('Soru kaydedilirken bir hata oluştu.');
+      alert(err.message || 'Soru kaydedilirken ve analiz edilirken bir hata oluştu.');
     })
     .finally(() => {
       setIsSubmitting(false);
@@ -246,18 +245,11 @@ export default function Errors({ onBack }) {
     const solvedItem = errorsList.find(item => item.id === id);
     if (!solvedItem) return;
 
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    // Çözülen soruyu listeden kaldırıyoruz (backend'den siliyoruz)
-    fetch(`${API_BASE_URL}/api/errors/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    })
-    .then(res => {
-      if (res.ok) {
+    supabase.from('errors')
+      .delete()
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) throw error;
         setErrorsList(prev => prev.filter(item => item.id !== id));
         
         // Detay modalı açıksa kapatıyoruz
@@ -269,38 +261,26 @@ export default function Errors({ onBack }) {
         const newSolvedCount = solvedCount + 1;
         setSolvedCount(newSolvedCount);
         localStorage.setItem('solved_errors_count', newSolvedCount.toString());
-      } else {
-        throw new Error('Soru silinemedi.');
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      alert('Soru güncellenirken hata oluştu.');
-    });
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Soru güncellenirken hata oluştu.');
+      });
   };
 
   const handleDeleteError = (id) => {
     if (window.confirm('Bu soruyu kumbaradan kalıcı olarak silmek istiyor musunuz?')) {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      fetch(`${API_BASE_URL}/api/errors/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      .then(res => {
-        if (res.ok) {
+      supabase.from('errors')
+        .delete()
+        .eq('id', id)
+        .then(({ error }) => {
+          if (error) throw error;
           setErrorsList(prev => prev.filter(item => item.id !== id));
-        } else {
-          throw new Error('Soru silinemedi.');
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Soru silinirken hata oluştu.');
-      });
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Soru silinirken hata oluştu.');
+        });
     }
   };
 

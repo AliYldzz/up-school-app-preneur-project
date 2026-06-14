@@ -42,7 +42,27 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         
     user = db.query(User).filter(User.email == email).first()
     if user is None:
-        raise credentials_exception
+        # Auto-create user row in backend database to sync with Supabase Auth session
+        user_metadata = payload.get("user_metadata")
+        if not isinstance(user_metadata, dict):
+            user_metadata = {}
+        
+        full_name = user_metadata.get("fullName") or user_metadata.get("full_name") or email.split("@")[0].capitalize()
+        
+        user = User(
+            email=email,
+            fullName=full_name,
+            hashed_password="supabase_oauth_user", # Placeholder since password is verified by Supabase
+            focus_area="Sayısal",
+            target_goal="İlk 5000",
+            weekly_hours="20 Saat",
+            focus_time="Sabah 🌅",
+            daily_goal_hours=4.0
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
     return user
 
 @router.post("/register", response_model=Token)

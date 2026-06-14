@@ -27,9 +27,42 @@ export default function Login({ onLoginSuccess, onRegisterClick }) {
       if (error) {
         throw error;
       }
-      setIsLoading(false);
-      localStorage.setItem('token', data.session.access_token);
-      onLoginSuccess();
+      const token = data.session.access_token;
+      localStorage.setItem('token', token);
+      
+      const userId = data.user.id;
+      return supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+        .then(({ data: userData, error: userError }) => {
+          if (userError || !userData) {
+            // Profile might not exist yet, let's create a default one
+            const defaultUser = {
+              id: userId,
+              email: data.user.email,
+              fullName: data.user.user_metadata?.fullName || data.user.user_metadata?.full_name || data.user.email.split('@')[0],
+              focus_area: 'Sayısal',
+              target_goal: 'İlk 5000',
+              weekly_hours: '20 Saat',
+              focus_time: 'Sabah 🌅',
+              daily_goal_hours: 4.0
+            };
+            return supabase
+              .from('users')
+              .insert(defaultUser)
+              .select('*')
+              .single()
+              .then(({ data: createdUser, error: insertError }) => {
+                if (insertError) throw new Error(insertError.message);
+                setIsLoading(false);
+                onLoginSuccess(createdUser);
+              });
+          }
+          setIsLoading(false);
+          onLoginSuccess(userData);
+        });
     })
     .catch((err) => {
       setIsLoading(false);

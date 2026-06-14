@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from './config';
+import { supabase } from './supabaseClient';
 
 export default function AdminPanel({ onLogout }) {
   const [stats, setStats] = useState({ total_users: 0, total_tasks: 0, completed_tasks: 0 });
@@ -7,15 +7,24 @@ export default function AdminPanel({ onLogout }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAdminData = () => {
-    const token = localStorage.getItem('token');
-    
     Promise.all([
-      fetch(`${API_BASE_URL}/api/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json()),
-      fetch(`${API_BASE_URL}/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json())
+      supabase.from('users').select('*', { count: 'exact', head: true }),
+      supabase.from('tasks').select('*', { count: 'exact', head: true }),
+      supabase.from('tasks').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+      supabase.from('users').select('*')
     ])
-    .then(([statsData, usersData]) => {
-      setStats(statsData);
-      setUsers(usersData);
+    .then(([usersCount, tasksCount, completedTasksCount, usersList]) => {
+      if (usersCount.error) throw usersCount.error;
+      if (tasksCount.error) throw tasksCount.error;
+      if (completedTasksCount.error) throw completedTasksCount.error;
+      if (usersList.error) throw usersList.error;
+
+      setStats({
+        total_users: usersCount.count || 0,
+        total_tasks: tasksCount.count || 0,
+        completed_tasks: completedTasksCount.count || 0
+      });
+      setUsers(usersList.data || []);
       setIsLoading(false);
     })
     .catch(err => {
@@ -30,21 +39,20 @@ export default function AdminPanel({ onLogout }) {
 
   const handleDeleteUser = (userId, userName) => {
     if (window.confirm(`${userName} adlı kullanıcıyı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
-      const token = localStorage.getItem('token');
-      fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-      .then(res => {
-        if (res.ok) {
-          fetchAdminData(); // Refresh list
-        } else {
-          alert("Silme işlemi başarısız oldu.");
-        }
-      })
-      .catch(err => {
-        alert("Bir hata oluştu.");
-      });
+      supabase.from('users')
+        .delete()
+        .eq('id', userId)
+        .then(({ error }) => {
+          if (error) {
+            alert("Silme işlemi başarısız oldu: " + error.message);
+          } else {
+            fetchAdminData(); // Refresh list
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert("Bir hata oluştu.");
+        });
     }
   };
 

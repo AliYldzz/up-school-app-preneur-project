@@ -8,6 +8,8 @@ import Settings from './Settings';
 import Errors from './Errors';
 import Lessons from './Lessons';
 import Admin from './Admin';
+import { supabase } from './supabaseClient';
+import { rescheduleStudyPlan } from './aiService';
 
 const INITIAL_PROGRAM = [
   { 
@@ -95,31 +97,67 @@ function App() {
   };
 
   const handleRescheduleSubmit = () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     setIsRescheduling(true);
-    fetch(`${API_BASE_URL}/api/plan/reschedule`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        reason: 'skipped_by_user',
-        incomplete_task_ids: selectedIncompleteTasks,
-        current_energy_level: energyLevel
-      })
+    
+    let currentUser;
+    supabase.auth.getUser()
+    .then(({ data: { user } }) => {
+      if (!user) throw new Error("Giriş yapmalısınız.");
+      currentUser = user;
+      
+      return supabase.from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_deleted', false);
     })
-    .then(res => {
-      if (res.ok) return res.json();
-      throw new Error('Yeniden planlama başarısız oldu.');
+    .then(({ data: allTasks, error }) => {
+      if (error) throw error;
+      
+      const incomplete = allTasks.filter(t => selectedIncompleteTasks.includes(t.id));
+      const other = allTasks.filter(t => !selectedIncompleteTasks.includes(t.id) && t.status !== 'completed');
+      
+      return rescheduleStudyPlan(
+        getDaysRemaining(),
+        userTarget,
+        userFocus,
+        energyLevel,
+        incomplete,
+        other
+      );
     })
-    .then(data => {
+    .then(async (rescheduledTasks) => {
+      const today = new Date();
+      
+      const updatePromises = rescheduledTasks.map(t => {
+        const offset = t.day_offset || 0;
+        const taskDate = new Date();
+        taskDate.setDate(today.getDate() + offset);
+        const dateStr = taskDate.toISOString().split('T')[0];
+        
+        return supabase.from('tasks')
+          .update({
+            estimated_time: t.estimated_time,
+            priority_score: t.priority_score,
+            status: 'pending',
+            scheduled_date: dateStr
+          })
+          .eq('id', t.id);
+      });
+      
+      await Promise.all(updatePromises);
+      
+      return supabase.from('tasks')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('is_deleted', false);
+    })
+    .then(({ data: freshTasks, error }) => {
+      if (error) throw error;
+      
       setIsRescheduling(false);
       setShowRescheduleModal(false);
       
-      const formatted = data.scheduled_tasks.map(ct => ({
+      const formatted = freshTasks.map(ct => ({
         id: ct.id,
         subject: ct.subject_name,
         title: ct.title,
@@ -128,6 +166,7 @@ function App() {
         color: ct.subject_name === 'MATEMATİK' ? '#3498DB' : ct.subject_name === 'FİZİK' ? '#FF9875' : ct.subject_name === 'TÜRKÇE' ? '#005D32' : ct.subject_name === 'BİYOLOJİ' ? '#E67E22' : '#717970',
         bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FFF3F0' : ct.subject_name === 'TÜRKÇE' ? '#EBF5EC' : ct.subject_name === 'BİYOLOJİ' ? '#FDF2E9' : '#F0F3F1'
       }));
+      
       setProgram(formatted);
       triggerStatsUpdate();
     })
@@ -168,16 +207,13 @@ function App() {
   React.useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch(`${API_BASE_URL}/api/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      supabase.auth.getUser()
+      .then(({ data: { user }, error }) => {
+        if (error || !user) throw new Error('Oturum süresi dolmuş.');
+        return supabase.from('users').select('*').eq('id', user.id).maybeSingle();
       })
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('Oturum süresi dolmuş.');
-      })
-      .then(data => {
+      .then(({ data, error }) => {
+        if (error || !data) throw new Error('Profil yüklenemedi.');
         setUserName(data.fullName);
         setUserTarget(data.target_goal);
         setUserFocus(data.focus_area);
@@ -189,50 +225,42 @@ function App() {
         setIsLoggedIn(false);
       });
     }
-  }, [isLoggedIn]);
+  }, []);
 
-  // Get tasks from API when logged in
+  // Get tasks from Supabase when logged in
   React.useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (isLoggedIn && token) {
-      fetch(`${API_BASE_URL}/api/tasks/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+    if (isLoggedIn) {
+      supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) return;
+        return supabase.from('tasks').select('*').eq('user_id', user.id).eq('is_deleted', false);
       })
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('Görevler yüklenemedi');
-      })
-      .then(data => {
-        if (data.length === 0) {
-          // Create initial tasks in backend
-          const createPromises = INITIAL_PROGRAM.map(t => {
-            return fetch(`${API_BASE_URL}/api/tasks/`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                title: t.title,
-                subject_name: t.subject,
-                estimated_time: parseInt(t.timeRange) || 60,
-                status: 'pending'
-              })
-            }).then(r => r.json());
-          });
-          Promise.all(createPromises).then(createdTasks => {
-            const formatted = createdTasks.map(ct => ({
-              id: ct.id,
-              subject: ct.subject_name,
-              title: ct.title,
-              timeRange: `${ct.estimated_time} dakika`,
-              status: ct.status,
-              color: ct.subject_name === 'MATEMATİK' ? '#3498DB' : ct.subject_name === 'FİZİK' ? '#FF9875' : ct.subject_name === 'TÜRKÇE' ? '#005D32' : ct.subject_name === 'BİYOLOJİ' ? '#E67E22' : '#717970',
-              bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FFF3F0' : ct.subject_name === 'TÜRKÇE' ? '#EBF5EC' : ct.subject_name === 'BİYOLOJİ' ? '#FDF2E9' : '#F0F3F1'
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          // Create initial tasks
+          supabase.auth.getUser().then(({ data: { user } }) => {
+            const initialTasks = INITIAL_PROGRAM.map(t => ({
+              user_id: user.id,
+              title: t.title,
+              subject_name: t.subject,
+              estimated_time: parseInt(t.timeRange) || 60,
+              status: t.status === 'active' ? 'active' : t.status === 'completed' ? 'completed' : 'pending'
             }));
-            setProgram(formatted);
+            supabase.from('tasks').insert(initialTasks).select('*')
+            .then(({ data: createdTasks, error: insertError }) => {
+              if (insertError) throw insertError;
+              const formatted = createdTasks.map(ct => ({
+                id: ct.id,
+                subject: ct.subject_name,
+                title: ct.title,
+                timeRange: `${ct.estimated_time} dakika`,
+                status: ct.status,
+                color: ct.subject_name === 'MATEMATİK' ? '#3498DB' : ct.subject_name === 'FİZİK' ? '#FF9875' : ct.subject_name === 'TÜRKÇE' ? '#005D32' : ct.subject_name === 'BİYOLOJİ' ? '#E67E22' : '#717970',
+                bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FFF3F0' : ct.subject_name === 'TÜRKÇE' ? '#EBF5EC' : ct.subject_name === 'BİYOLOJİ' ? '#FDF2E9' : '#F0F3F1'
+              }));
+              setProgram(formatted);
+            });
           });
         } else {
           const formatted = data.map(ct => ({
@@ -253,24 +281,103 @@ function App() {
     }
   }, [isLoggedIn]);
 
-  // Get user stats from API when logged in or when statsTrigger changes
+  // Get user stats from Supabase completed tasks list when logged in or statsTrigger changes
   React.useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (isLoggedIn && token) {
-      fetch(`${API_BASE_URL}/api/auth/stats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+    if (isLoggedIn) {
+      supabase.auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) return;
+        return supabase.from('tasks')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'completed')
+          .eq('is_deleted', false);
+      })
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!data) return;
+        
+        const total_solved = data.reduce((sum, t) => sum + (t.questions_solved || 0), 0);
+        const total_correct = data.reduce((sum, t) => sum + (t.questions_correct || 0), 0);
+        const total_wrong = data.reduce((sum, t) => sum + (t.questions_wrong || 0), 0);
+        const total_minutes = data.reduce((sum, t) => sum + (t.actual_time || 0), 0);
+        
+        const accuracy_rate = total_solved > 0 ? parseFloat(((total_correct / total_solved) * 100).toFixed(1)) : 0.0;
+        const total_hours = parseFloat((total_minutes / 60.0).toFixed(1));
+        
+        const activeDays = new Set();
+        data.forEach(t => {
+          if (t.created_at) {
+            const dateStr = new Date(t.created_at).toISOString().split('T')[0];
+            activeDays.add(dateStr);
+          }
+        });
+        
+        let streak_days = 0;
+        const checkDate = new Date();
+        let checkDateStr = checkDate.toISOString().split('T')[0];
+        if (!activeDays.has(checkDateStr)) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          checkDateStr = checkDate.toISOString().split('T')[0];
         }
-      })
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('İstatistikler yüklenemedi');
-      })
-      .then(data => {
-        setUserStats(data);
+        
+        while (activeDays.has(checkDateStr)) {
+          streak_days++;
+          checkDate.setDate(checkDate.getDate() - 1);
+          checkDateStr = checkDate.toISOString().split('T')[0];
+        }
+        
+        const subjectStats = {};
+        data.forEach(t => {
+          const subj = t.subject_name || "Diğer";
+          if (!subjectStats[subj]) {
+            subjectStats[subj] = { solved: 0, correct: 0 };
+          }
+          subjectStats[subj].solved += (t.questions_solved || 0);
+          subjectStats[subj].correct += (t.questions_correct || 0);
+        });
+        
+        const subject_accuracy = Object.keys(subjectStats).map(subj => {
+          const s = subjectStats[subj];
+          return {
+            name: subj,
+            percent: s.solved > 0 ? Math.round((s.correct / s.solved) * 100) : 0
+          };
+        });
+        
+        if (subject_accuracy.length === 0) {
+          subject_accuracy.push({ name: "MATEMATİK", percent: 0 });
+        }
+        
+        const dailyChart = [0, 0, 0, 0, 0, 0, 0];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date();
+          d.setDate(d.getDate() - (6 - i));
+          const dStr = d.toISOString().split('T')[0];
+          
+          const dayTasks = data.filter(t => {
+            if (!t.created_at) return false;
+            return new Date(t.created_at).toISOString().split('T')[0] === dStr;
+          });
+          dailyChart[i] = dayTasks.reduce((sum, t) => sum + (t.questions_solved || 0), 0);
+        }
+        
+        const maxVal = Math.max(...dailyChart);
+        const daily_chart = dailyChart.map(v => maxVal > 0 ? Math.round((v / maxVal) * 100) : 0);
+        
+        setUserStats({
+          total_solved,
+          total_correct,
+          total_wrong,
+          accuracy_rate,
+          total_hours,
+          daily_chart,
+          streak_days,
+          subject_accuracy
+        });
       })
       .catch(err => {
-        console.error(err);
+        console.error("Stats calculation error:", err);
       });
     }
   }, [isLoggedIn, statsTrigger]);
@@ -293,40 +400,35 @@ function App() {
   };
 
   const handleTaskComplete = (taskId, questionStats) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          status: 'completed',
-          questions_solved: questionStats?.questions_solved || 0,
-          questions_correct: questionStats?.questions_correct || 0,
-          questions_wrong: questionStats?.questions_wrong || 0,
-          actual_time: questionStats?.actual_time || 0
-        })
+    supabase.from('tasks')
+      .update({
+        status: 'completed',
+        questions_solved: questionStats?.questions_solved || 0,
+        questions_correct: questionStats?.questions_correct || 0,
+        questions_wrong: questionStats?.questions_wrong || 0,
+        actual_time: questionStats?.actual_time || 0
       })
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('Görev güncellenemedi');
-      })
-      .then(() => {
+      .eq('id', taskId)
+      .then(({ error }) => {
+        if (error) throw error;
         triggerStatsUpdate();
         setProgram(prev => prev.map(t => t.id === taskId ? { ...t, status: 'completed' } : t));
       })
       .catch(err => {
-        console.error(err);
+        console.error("Task update error:", err);
       });
-    }
     setActiveTimerTask(null);
   };
 
   const handleTimerBack = (isPaused) => {
-    if (isPaused) {
-      setProgram(prev => prev.map(t => t.id === activeTimerTask.id ? { ...t, status: 'paused' } : t));
+    if (isPaused && activeTimerTask) {
+      supabase.from('tasks')
+        .update({ status: 'paused' })
+        .eq('id', activeTimerTask.id)
+        .then(({ error }) => {
+          if (error) console.error(error);
+          setProgram(prev => prev.map(t => t.id === activeTimerTask.id ? { ...t, status: 'paused' } : t));
+        });
     }
     setActiveTimerTask(null);
   };
@@ -396,7 +498,20 @@ function App() {
           />
         );
       }
-      return <Login onLoginSuccess={() => setIsLoggedIn(true)} onRegisterClick={() => setAuthMode('register')} />;
+      return (
+        <Login 
+          onLoginSuccess={(data) => {
+            if (data) {
+              setUserName(data.fullName);
+              setUserTarget(data.target_goal);
+              setUserFocus(data.focus_area);
+              setProfilePic(data.profile_pic);
+            }
+            setIsLoggedIn(true);
+          }} 
+          onRegisterClick={() => setAuthMode('register')} 
+        />
+      );
     };
 
     return (
@@ -437,36 +552,27 @@ function App() {
           userFocus={userFocus} 
           userStats={userStats}
           onUpdateProfile={(name, target, focus, pic) => {
-            const token = localStorage.getItem('token');
-            if (token) {
-              fetch(`${API_BASE_URL}/api/auth/me`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  fullName: name,
-                  target_goal: target,
-                  focus_area: focus,
-                  profile_pic: pic
-                })
-              })
-              .then(res => {
-                if (res.ok) return res.json();
-                throw new Error('Profil güncellenemedi');
-              })
-              .then(data => {
-                setUserName(data.fullName);
-                setUserTarget(data.target_goal);
-                setUserFocus(data.focus_area);
-                if (data.profile_pic) setProfilePic(data.profile_pic);
-              })
-              .catch(err => {
-                console.error(err);
-                alert('Hedefler güncellenirken sunucuda bir hata oluştu.');
-              });
-            }
+            supabase.auth.getUser()
+            .then(({ data: { user } }) => {
+              if (!user) return;
+              return supabase.from('users').update({
+                fullName: name,
+                target_goal: target,
+                focus_area: focus,
+                profile_pic: pic
+              }).eq('id', user.id).select('*').single();
+            })
+            .then(({ data, error }) => {
+              if (error) throw error;
+              setUserName(data.fullName);
+              setUserTarget(data.target_goal);
+              setUserFocus(data.focus_area);
+              if (data.profile_pic) setProfilePic(data.profile_pic);
+            })
+            .catch(err => {
+              console.error(err);
+              alert('Hedefler güncellenirken bir hata oluştu.');
+            });
           }}
         />
       );
