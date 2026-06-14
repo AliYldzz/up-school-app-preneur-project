@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, AppState, AppStat
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { store } from '../../store';
-import { API_BASE_URL } from '../../lib/config';
+import { supabase } from '../../lib/supabaseClient';
 import { addToOfflineQueue, syncOfflineQueue, TaskPayload } from '../../lib/offlineQueue';
 
 interface Task {
@@ -75,14 +75,20 @@ export default function FocusScreen() {
   }, [isActive, timeLeft]);
 
   const fetchTasks = async () => {
-    if (!store.token) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/tasks/`, {
-        headers: { Authorization: `Bearer ${store.token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setTasks(data.filter((t: Task) => t.status === 'pending'));
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('scheduled_date', todayStr)
+        .in('status', ['pending', 'active'])
+        .order('priority_score', { ascending: false });
+
+      if (!error && data) {
+        setTasks(data);
       }
     } catch (err) {
       console.log('Görevler çekilemedi, internet yok olabilir.');
@@ -114,12 +120,11 @@ export default function FocusScreen() {
   const completeTask = async () => {
     if (!selectedTask) return;
 
-    // Lokal kuyruğa ekle
+    // Lokal kuyruğa ekle (ID bazlı)
     const payload: TaskPayload = {
-      title: selectedTask.title, // Eşleşme için
+      id: selectedTask.id,
       status: 'completed',
       actual_time: selectedTask.estimated_time - Math.floor(timeLeft / 60),
-      version: 2 // Versiyon yükseltildi
     };
 
     await addToOfflineQueue(payload);

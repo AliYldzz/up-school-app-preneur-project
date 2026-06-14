@@ -5,7 +5,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { store } from '../../store';
-import { API_BASE_URL } from '../../lib/config';
+import { supabase } from '../../lib/supabaseClient';
+import { rescheduleStudyPlan } from '../../lib/aiService';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -140,73 +141,112 @@ export default function HomeScreen() {
     return today > exam2026 ? 2027 : 2026;
   };
 
-  const loadTasksAndUser = () => {
-    if (!store.token) return;
+  const getSubjectColor = (subject: string) => {
+    const map: Record<string, { color: string; bgColor: string }> = {
+      'MATEMATİK': { color: '#2E86C1', bgColor: '#EBF5FB' },
+      'FİZİK':     { color: '#E74C3C', bgColor: '#FDEDEC' },
+      'KİMYA':     { color: '#27AE60', bgColor: '#EAFAF1' },
+      'BİYOLOJİ':  { color: '#8E44AD', bgColor: '#F4ECF7' },
+      'TÜRKÇE':    { color: '#9B59B6', bgColor: '#F5EEF8' },
+      'EDEBİYAT':  { color: '#C0392B', bgColor: '#FDEDEC' },
+      'TARİH':     { color: '#D4AC0D', bgColor: '#FEFCE8' },
+      'COĞRAFYA':  { color: '#1ABC9C', bgColor: '#E8F8F5' },
+    };
+    return map[subject] || { color: '#E67E22', bgColor: '#FDF2E9' };
+  };
 
-    // Fetch User Profile
-    fetch(`${API_BASE_URL}/api/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${store.token}`
+  const formatTask = (ct: any) => {
+    const { color, bgColor } = getSubjectColor(ct.subject_name);
+    return {
+      id: ct.id,
+      subject: ct.subject_name,
+      title: ct.title,
+      timeRange: `${ct.estimated_time} dakika`,
+      status: ct.status,
+      color,
+      bgColor,
+      estimated_time: ct.estimated_time,
+      priority_score: ct.priority_score,
+    };
+  };
+
+  const loadTasksAndUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Load user profile
+    const { data: profile } = await supabase
+      .from('users')
+      .select('fullName, target_goal, focus_area, profile_pic')
+      .eq('id', user.id)
+      .single();
+
+    let computedStreakDays = 0;
+    try {
+      // Calculate streak client-side
+      const { data: completedTasksData } = await supabase
+        .from('tasks')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .eq('status', 'completed')
+        .eq('is_deleted', false);
+
+      if (completedTasksData && completedTasksData.length > 0) {
+        const activeDays = new Set<string>();
+        completedTasksData.forEach(t => {
+          if (t.created_at) {
+            const dateStr = new Date(t.created_at).toISOString().split('T')[0];
+            activeDays.add(dateStr);
+          }
+        });
+
+        const checkDate = new Date();
+        let checkDateStr = checkDate.toISOString().split('T')[0];
+        if (!activeDays.has(checkDateStr)) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          checkDateStr = checkDate.toISOString().split('T')[0];
+        }
+
+        while (activeDays.has(checkDateStr)) {
+          computedStreakDays++;
+          checkDate.setDate(checkDate.getDate() - 1);
+          checkDateStr = checkDate.toISOString().split('T')[0];
+        }
       }
-    })
-    .then(res => {
-      if (res.ok) return res.json();
-      throw new Error();
-    })
-    .then(data => {
+    } catch (err) {
+      console.warn('Error computing streak:', err);
+    }
+
+    if (profile) {
+      store.userProfile = profile;
       setUserInfo(prev => ({
         ...prev,
-        fullName: data.fullName,
-        targetGoal: data.target_goal,
-        focusArea: data.focus_area,
-        profilePic: data.profile_pic,
-        examDate: data.exam_date
+        fullName: profile.fullName || 'Geleceğin Şampiyonu',
+        targetGoal: profile.target_goal || 'İlk 5000',
+        focusArea: profile.focus_area || 'Sayısal',
+        profilePic: profile.profile_pic || null,
+        examDate: null,
+        streakDays: computedStreakDays,
       }));
-    })
-    .catch(() => {});
+    }
 
-    // Fetch Stats for Streak
-    fetch(`${API_BASE_URL}/api/auth/stats`, {
-      headers: {
-        'Authorization': `Bearer ${store.token}`
-      }
-    })
-    .then(res => res.ok ? res.json() : null)
-    .then(data => {
-      if (data && data.streak_days !== undefined) {
-        setUserInfo(prev => ({ ...prev, streakDays: data.streak_days }));
-      }
-    })
-    .catch(() => {});
+    // Load today's tasks
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { data: tasks, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('scheduled_date', todayStr)
+      .order('priority_score', { ascending: false });
 
-    // Fetch Tasks
-    fetch(`${API_BASE_URL}/api/tasks/`, {
-      headers: {
-        'Authorization': `Bearer ${store.token}`
-      }
-    })
-    .then(res => {
-      if (res.ok) return res.json();
-      throw new Error('Görevler yüklenemedi');
-    })
-    .then(data => {
-      if (data && data.length > 0) {
-        const todayStr = new Date().toISOString().split('T')[0];
-        const formatted = data
-          .filter((ct: any) => !ct.scheduled_date || ct.scheduled_date === todayStr)
-          .map((ct: any) => ({
-            id: ct.id,
-            subject: ct.subject_name,
-            title: ct.title,
-            timeRange: `${ct.estimated_time} dakika`,
-            status: ct.status,
-            color: ct.subject_name === 'MATEMATİK' ? '#2E86C1' : ct.subject_name === 'FİZİK' ? '#E74C3C' : ct.subject_name === 'TÜRKÇE' ? '#9B59B6' : '#E67E22',
-            bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FDEDEC' : ct.subject_name === 'TÜRKÇE' ? '#F5EEF8' : '#FDF2E9'
-          }));
-        setProgram(formatted);
-      }
-    })
-    .catch(err => console.error('[Fetch Tasks Error]', err));
+    if (error) {
+      console.error('[Supabase Tasks Error]', error);
+      return;
+    }
+
+    if (tasks && tasks.length > 0) {
+      setProgram(tasks.map(formatTask));
+    }
   };
 
   useFocusEffect(
@@ -223,46 +263,52 @@ export default function HomeScreen() {
   };
 
   const handleRescheduleSubmit = () => {
-    if (!store.token) return;
-
-    const performReschedule = () => {
+    const performReschedule = async () => {
       setIsRescheduling(true);
-      fetch(`${API_BASE_URL}/api/plan/reschedule`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${store.token}`
-        },
-        body: JSON.stringify({
-          reason: 'skipped_by_user',
-          incomplete_task_ids: selectedIncompleteTasks,
-          current_energy_level: energyLevel
-        })
-      })
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('Yeniden planlama başarısız oldu.');
-      })
-      .then(data => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Oturum bulunamadı.');
+
+        const profile = store.userProfile;
+        const daysRemaining = getDaysRemaining();
+        const incompleteTasks = program.filter(t => selectedIncompleteTasks.includes(t.id));
+        const otherTasks = program.filter(t => !selectedIncompleteTasks.includes(t.id) && t.status !== 'completed');
+
+        const rescheduled = await rescheduleStudyPlan(
+          daysRemaining,
+          profile?.target_goal || 'İlk 5000',
+          profile?.focus_area || 'Sayısal',
+          energyLevel,
+          incompleteTasks,
+          otherTasks
+        );
+
+        // Write rescheduled tasks back to Supabase
+        const todayStr = new Date().toISOString().split('T')[0];
+        for (const t of rescheduled) {
+          const schedDate = new Date();
+          schedDate.setDate(schedDate.getDate() + (t.day_offset || 0));
+          const dateStr = schedDate.toISOString().split('T')[0];
+          await supabase
+            .from('tasks')
+            .update({
+              scheduled_date: dateStr,
+              priority_score: t.priority_score,
+              estimated_time: t.estimated_time,
+              status: t.day_offset === 0 ? 'pending' : 'pending'
+            })
+            .eq('id', t.id)
+            .eq('user_id', user.id);
+        }
+
         setIsRescheduling(false);
         setShowRescheduleModal(false);
-        
-        const formatted = data.scheduled_tasks.map((ct: any) => ({
-          id: ct.id,
-          subject: ct.subject_name,
-          title: ct.title,
-          timeRange: `${ct.estimated_time} dakika`,
-          status: ct.status,
-          color: ct.subject_name === 'MATEMATİK' ? '#2E86C1' : ct.subject_name === 'FİZİK' ? '#E74C3C' : ct.subject_name === 'TÜRKÇE' ? '#9B59B6' : '#E67E22',
-          bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FDEDEC' : ct.subject_name === 'TÜRKÇE' ? '#F5EEF8' : '#FDF2E9'
-        }));
-        setProgram(formatted);
-        Alert.alert('Başarılı', 'Planınız başarıyla güncellendi.');
-      })
-      .catch(err => {
+        Alert.alert('Başarılı ✨', 'Yapay zeka planınızı güncelledi!');
+        await loadTasksAndUser();
+      } catch (err: any) {
         setIsRescheduling(false);
         Alert.alert('Hata', err.message || 'Plan yeniden düzenlenirken bir hata oluştu.');
-      });
+      }
     };
 
     if (energyLevel <= 2) {
@@ -451,8 +497,11 @@ export default function HomeScreen() {
                       { 
                         text: "Evet", 
                         style: "destructive",
-                        onPress: () => {
+                        onPress: async () => {
+                          await supabase.auth.signOut();
                           store.token = null;
+                          store.user = null;
+                          store.userProfile = null;
                           if (router.canDismiss()) {
                             router.dismissAll();
                           }

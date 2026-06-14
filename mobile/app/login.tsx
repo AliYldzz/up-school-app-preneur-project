@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { API_BASE_URL } from '../lib/config';
+import { supabase } from '../lib/supabaseClient';
 import { store } from '../store';
 
 export default function LoginScreen() {
@@ -24,23 +24,15 @@ export default function LoginScreen() {
 
     setIsLoading(true);
 
-    fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
+    supabase.auth.signInWithPassword({
+      email,
+      password
     })
-    .then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Giriş yapılamadı.');
-      }
-      return data;
-    })
-    .then((data) => {
+    .then(({ data, error: sbError }) => {
+      if (sbError) throw sbError;
+      
       setIsLoading(false);
-      store.token = data.access_token;
+      store.token = data.session?.access_token || null;
       router.replace('/(tabs)');
     })
     .catch((err) => {

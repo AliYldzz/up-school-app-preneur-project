@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { API_BASE_URL } from '../lib/config';
+import { supabase } from '../lib/supabaseClient';
+import { generateInitialStudyPlan } from '../lib/aiService';
 import { store } from '../store';
 
 const TYT_SUB_TOPICS: Record<string, string[]> = {
@@ -104,10 +105,8 @@ export default function RegisterScreen() {
       return topics.length > 0 ? `${subject} (${topics.join(', ')})` : subject;
     }).join(', ');
 
-    const payload = {
-      email: formData.email,
+    const profileData = {
       fullName: formData.fullName,
-      password: formData.password,
       focus_area: formData.focus_area || 'Sayısal',
       target_goal: `TYT Zayıf Dersleri: ${tytDetails} | AYT Zayıf Dersleri: ${aytDetails}`,
       weekly_hours: `${formData.weekly_hours} Saat`,
@@ -116,33 +115,54 @@ export default function RegisterScreen() {
       profile_pic: formData.profile_pic
     };
 
-    fetch(`${API_BASE_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-    .then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Kayıt başarısız oldu.');
-      }
-      return data;
-    })
-    .then((data) => {
-      store.token = data.access_token;
-      setIsAILoading(true);
-      
-      return fetch(`${API_BASE_URL}/api/tasks/`, {
-        headers: {
-          'Authorization': `Bearer ${data.access_token}`
+    supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          fullName: formData.fullName
         }
-      });
+      }
     })
-    .then(async (res) => {
-      if (!res.ok) throw new Error("Yapay zeka planı kurarken hata oluştu.");
-      return res.json();
+    .then(({ data: sbData, error: sbError }) => {
+      if (sbError) throw sbError;
+      if (!sbData.user) throw new Error("Kullanıcı oluşturulamadı.");
+      
+      const userId = sbData.user.id;
+      store.token = sbData.session?.access_token || null;
+      setIsAILoading(true);
+
+      return supabase
+        .from('users')
+        .update(profileData)
+        .eq('id', userId)
+        .then(({ error: updateError }) => {
+          if (updateError) throw updateError;
+          
+          return generateInitialStudyPlan(
+            formData.fullName,
+            formData.focus_area || 'Sayısal',
+            profileData.target_goal,
+            profileData.weekly_hours,
+            profileData.focus_time
+          );
+        })
+        .then((aiTasks) => {
+          const supabaseTasks = aiTasks.map((t: any) => ({
+            user_id: userId,
+            title: t.title,
+            subject_name: t.subject_name,
+            estimated_time: t.estimated_time || 60,
+            priority_score: t.priority_score || 1.0,
+            status: 'pending',
+            scheduled_date: new Date(Date.now() + (t.day_offset || 0) * 86400000).toISOString().split('T')[0]
+          }));
+
+          return supabase.from('tasks').insert(supabaseTasks);
+        })
+        .then(({ error: insertTasksError }) => {
+          if (insertTasksError) throw insertTasksError;
+        });
     })
     .then(() => {
       setTimeout(() => {

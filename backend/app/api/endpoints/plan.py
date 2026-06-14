@@ -74,27 +74,27 @@ def reschedule_plan(
     use_fallback = True
     optimized_tasks = []
     
-    if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
-        try:
-            # Yapılamayan görevleri ve diğer görevleri listele
-            incomplete_list = [t for t in task_dicts if t["id"] in (payload.incomplete_task_ids or [])]
-            other_list = [t for t in task_dicts if t["id"] not in (payload.incomplete_task_ids or [])]
+    
+    try:
+        # Yapılamayan görevleri ve diğer görevleri listele
+        incomplete_list = [t for t in task_dicts if t["id"] in (payload.incomplete_task_ids or [])]
+        other_list = [t for t in task_dicts if t["id"] not in (payload.incomplete_task_ids or [])]
             
-            ai_optimized = reschedule_study_plan(
-                remaining_days=r_days,
-                target_goal=current_user.target_goal or "İlk 5000",
-                focus_area=current_user.focus_area or "Sayısal",
-                energy_level=payload.current_energy_level or 3,
-                incomplete_tasks=incomplete_list,
-                other_tasks=other_list
-            )
+        ai_optimized = reschedule_study_plan(
+            remaining_days=r_days,
+            target_goal=current_user.target_goal or "İlk 5000",
+            focus_area=current_user.focus_area or "Sayısal",
+            energy_level=payload.current_energy_level or 3,
+            incomplete_tasks=incomplete_list,
+            other_tasks=other_list
+           )
             
-            optimized_tasks = ai_optimized
-            use_fallback = False
-            message_prefix = "AI (Gemini) DARR motoru"
-        except Exception as e:
-            print(f"[Gemini AI Reschedule Fallback] Hata: {e}")
-            # Hata durumunda yerel DARR motoru çalışacak
+        optimized_tasks = ai_optimized
+        use_fallback = False
+        message_prefix = "AI (Gemini) DARR motoru"
+    except Exception as e:
+        print(f"[Gemini AI Reschedule Fallback] Hata: {e}")
+        # Hata durumunda yerel DARR motoru çalışacak
             
     if use_fallback:
         # Fallback: Kural tabanlı matematiksel DARR motorunu çalıştır

@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { store } from '../../store';
-import { API_BASE_URL } from '../../lib/config';
+import { supabase } from '../../lib/supabaseClient';
 
 const { width } = Dimensions.get('window');
 
@@ -47,49 +47,80 @@ export default function ProfileScreen() {
     daily_chart: [] as number[]
   });
 
-  const loadUserData = () => {
-    if (!store.token) return;
-    fetch(`${API_BASE_URL}/api/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${store.token}`
-      }
-    })
-    .then(res => {
-      if (res.ok) return res.json();
-      throw new Error();
-    })
-    .then(data => {
-      setUserInfo({
-        fullName: data.fullName,
-        targetGoal: data.target_goal,
-        focusArea: data.focus_area,
-        profilePic: data.profile_pic
-      });
-    })
-    .catch(() => {});
+  const loadUserData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-    // Fetch Stats
-    fetch(`${API_BASE_URL}/api/auth/stats`, {
-      headers: {
-        'Authorization': `Bearer ${store.token}`
+    // Load profile
+    const { data: profile } = await supabase
+      .from('users')
+      .select('fullName, target_goal, focus_area, profile_pic')
+      .eq('id', user.id)
+      .single();
+
+    if (profile) {
+      store.userProfile = profile;
+      setUserInfo({
+        fullName: profile.fullName || 'Geleceğin Şampiyonu',
+        targetGoal: profile.target_goal || 'İlk 5000',
+        focusArea: profile.focus_area || 'Sayısal',
+        profilePic: profile.profile_pic || null
+      });
+    }
+
+    // Compute stats from tasks table
+    const { data: tasks } = await supabase
+      .from('tasks')
+      .select('status, estimated_time, subject_name, created_at')
+      .eq('user_id', user.id);
+
+    if (tasks) {
+      const completed = tasks.filter(t => t.status === 'completed');
+      const totalHours = Math.round(completed.reduce((sum, t) => sum + (t.estimated_time || 0), 0) / 60);
+
+      // Subject accuracy (simplified: completed/total per subject)
+      const subjectMap: Record<string, { total: number; done: number }> = {};
+      tasks.forEach(t => {
+        if (!subjectMap[t.subject_name]) subjectMap[t.subject_name] = { total: 0, done: 0 };
+        subjectMap[t.subject_name].total++;
+        if (t.status === 'completed') subjectMap[t.subject_name].done++;
+      });
+      const subjectAccuracy = Object.entries(subjectMap).map(([name, v]) => ({
+        name,
+        percent: Math.round((v.done / v.total) * 100)
+      }));
+
+      // Calculate streak client-side
+      let computedStreakDays = 0;
+      const activeDays = new Set<string>();
+      completed.forEach(t => {
+        if (t.created_at) {
+          const dateStr = new Date(t.created_at).toISOString().split('T')[0];
+          activeDays.add(dateStr);
+        }
+      });
+
+      const checkDate = new Date();
+      let checkDateStr = checkDate.toISOString().split('T')[0];
+      if (!activeDays.has(checkDateStr)) {
+        checkDate.setDate(checkDate.getDate() - 1);
+        checkDateStr = checkDate.toISOString().split('T')[0];
       }
-    })
-    .then(res => res.ok ? res.json() : null)
-    .then(data => {
-      if (data) {
-        setStats({
-          total_solved: data.total_solved || 0,
-          total_hours: data.total_hours || 0,
-          streak_days: data.streak_days || 0,
-          accuracy_rate: data.accuracy_rate || 0,
-          total_correct: data.total_correct || 0,
-          total_wrong: data.total_wrong || 0,
-          subject_accuracy: data.subject_accuracy || [],
-          daily_chart: data.daily_chart || []
-        });
+
+      while (activeDays.has(checkDateStr)) {
+        computedStreakDays++;
+        checkDate.setDate(checkDate.getDate() - 1);
+        checkDateStr = checkDate.toISOString().split('T')[0];
       }
-    })
-    .catch(() => {});
+
+      setStats(prev => ({
+        ...prev,
+        total_solved: completed.length,
+        total_hours: totalHours,
+        streak_days: computedStreakDays,
+        subject_accuracy: subjectAccuracy,
+      }));
+    }
   };
 
   useFocusEffect(
@@ -111,17 +142,16 @@ export default function ProfileScreen() {
       const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
       setUserInfo(prev => ({ ...prev, profilePic: base64Image }));
 
-      // Kaydet API Call
-      fetch(`${API_BASE_URL}/api/auth/me`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${store.token}`
-        },
-        body: JSON.stringify({ profile_pic: base64Image })
-      }).catch(() => {
-        Alert.alert('Hata', 'Profil fotoğrafı güncellenemedi.');
-      });
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('users')
+          .update({ profile_pic: base64Image })
+          .eq('id', user.id);
+        if (error) {
+          Alert.alert('Hata', 'Profil fotoğrafı güncellenemedi.');
+        }
+      }
     }
   };
 
@@ -255,8 +285,11 @@ export default function ProfileScreen() {
                 { 
                   text: "Evet, Çıkış Yap", 
                   style: "destructive",
-                  onPress: () => {
+                  onPress: async () => {
+                    await supabase.auth.signOut();
                     store.token = null;
+                    store.user = null;
+                    store.userProfile = null;
                     if (router.canDismiss()) {
                       router.dismissAll();
                     }

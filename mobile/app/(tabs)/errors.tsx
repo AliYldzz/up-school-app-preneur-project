@@ -4,8 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { store } from '../../store';
-import { API_BASE_URL } from '../../lib/config';
+import { solveAndAnalyzeQuestion } from '../../lib/aiService';
 
 export default function ErrorsScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -55,32 +54,11 @@ export default function ErrorsScreen() {
 
   const uploadImageToAI = async (base64String: string | null | undefined) => {
     if (!base64String) return;
-    
-    if (!store.token) {
-      Alert.alert("Hata", "Oturum süreniz dolmuş, lütfen tekrar giriş yapın.");
-      return;
-    }
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/errors/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${store.token}`
-        },
-        body: JSON.stringify({
-          image_data: `data:image/jpeg;base64,${base64String}`,
-          subject_name: "Bilinmiyor",
-          topic_name: "Bilinmiyor",
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Yapay zeka analiz edemedi.');
-      }
-
-      const data = await response.json();
+      const imageData = `data:image/jpeg;base64,${base64String}`;
+      const data = await solveAndAnalyzeQuestion(imageData);
       setSolutionData(data);
     } catch (error: any) {
       console.error(error);
