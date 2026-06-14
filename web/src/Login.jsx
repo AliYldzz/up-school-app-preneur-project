@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_BASE_URL } from './config';
+import { supabase } from './supabaseClient';
 
 export default function Login({ onLoginSuccess, onRegisterClick }) {
   const [email, setEmail] = useState('');
@@ -18,23 +19,16 @@ export default function Login({ onLoginSuccess, onRegisterClick }) {
 
     setIsLoading(true);
 
-    fetch(`${API_BASE_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
+    supabase.auth.signInWithPassword({
+      email: email,
+      password: password,
     })
-    .then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || 'Giriş yapılamadı.');
+    .then(({ data, error }) => {
+      if (error) {
+        throw error;
       }
-      return data;
-    })
-    .then((data) => {
       setIsLoading(false);
-      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('token', data.session.access_token);
       onLoginSuccess();
     })
     .catch((err) => {
@@ -42,6 +36,7 @@ export default function Login({ onLoginSuccess, onRegisterClick }) {
       setError(err.message || 'Hatalı e-posta veya şifre.');
     });
   };
+
 
   return (
     <div style={styles.container}>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from './config';
+import { supabase } from './supabaseClient';
 
 const getDynamicQuestions = () => {
   return [
@@ -105,26 +106,40 @@ export default function Register({ onBack, onRegisterSuccess }) {
       profile_pic: profilePic
     };
 
-    fetch(`${API_BASE_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
+    supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          fullName: formData.fullName,
+        }
+      }
     })
-    .then(async (res) => {
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || 'Kayıt başarısız oldu.');
-      return data;
+    .then(({ data: sbData, error: sbError }) => {
+      if (sbError) throw sbError;
+      
+      return fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Kayıt başarısız oldu.');
+        return { data, sbData };
+      });
     })
-    .then((data) => {
-      localStorage.setItem('token', data.access_token);
+    .then(({ data, sbData }) => {
+      const token = sbData.session?.access_token || data.access_token;
+      localStorage.setItem('token', token);
       setIsAILoading(true);
       setStep(5); // AI Step
       
       return fetch(`${API_BASE_URL}/api/tasks/`, {
         headers: {
-          'Authorization': `Bearer ${data.access_token}`
+          'Authorization': `Bearer ${token}`
         }
       });
     })
@@ -145,6 +160,7 @@ export default function Register({ onBack, onRegisterSuccess }) {
       alert(err.message || 'Kayıt sırasında bir hata oluştu.');
     });
   };
+
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
