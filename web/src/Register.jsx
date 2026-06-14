@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from './config';
 import { supabase } from './supabaseClient';
+import { generateInitialStudyPlan } from './aiService';
 
 const getDynamicQuestions = () => {
   return [
@@ -147,42 +148,35 @@ export default function Register({ onBack, onRegisterSuccess }) {
       setIsAILoading(true);
       setStep(5); // AI Step
       
-      const initialTasks = [
-        { 
-          user_id: userId,
-          subject_name: 'MATEMATİK', 
-          title: 'Türev - Limit İlişkisi Soru Çözümü',
-          estimated_time: 90,
-          status: 'completed'
-        },
-        { 
-          user_id: userId,
-          subject_name: 'FİZİK', 
-          title: 'Modern Fizik: Fotoelektrik Olayı',
-          estimated_time: 90,
-          status: 'active'
-        },
-        { 
-          user_id: userId,
-          subject_name: 'TÜRKÇE', 
-          title: 'Paragraf Anlam Bilgisi Denemesi',
-          estimated_time: 60,
-          status: 'pending'
-        },
-        { 
-          user_id: userId,
-          subject_name: 'BİYOLOJİ', 
-          title: 'Hücresel Solunum Tekrar',
-          estimated_time: 60,
-          status: 'pending'
-        }
-      ];
-      return supabase
-        .from('tasks')
-        .insert(initialTasks)
-        .then(({ error: tasksError }) => {
-          if (tasksError) throw new Error(tasksError.message);
+      return generateInitialStudyPlan(
+        formData.fullName,
+        answers.focus || 'Sayısal',
+        payload.target_goal,
+        payload.weekly_hours,
+        payload.focus_time
+      )
+      .then((aiTasks) => {
+        const today = new Date();
+        const supabaseTasks = aiTasks.map((t) => {
+          const taskDate = new Date();
+          taskDate.setDate(today.getDate() + (t.day_offset || 0));
+          const dateStr = taskDate.toISOString().split('T')[0];
+          return {
+            user_id: userId,
+            title: t.title,
+            subject_name: t.subject_name,
+            estimated_time: t.estimated_time || 60,
+            priority_score: t.priority_score || 1.0,
+            status: 'pending',
+            scheduled_date: dateStr
+          };
         });
+
+        return supabase.from('tasks').insert(supabaseTasks);
+      })
+      .then(({ error: tasksError }) => {
+        if (tasksError) throw new Error(tasksError.message);
+      });
     })
     .then(() => {
       setTimeout(() => {

@@ -147,3 +147,80 @@ export async function solveAndAnalyzeQuestion(imageBase64) {
     };
   }
 }
+
+export async function generateInitialStudyPlan(
+  fullName,
+  focusArea,
+  targetGoal,
+  weeklyHours,
+  focusTime
+) {
+  const prompt = `
+    Sen YKS (TYT/AYT) öğrencileri için akıllı bir planlama motorusun.
+    Öğrenci Adı: ${fullName}
+    Alanı: ${focusArea} (Sayısal, Sözel, Eşit Ağırlık, Dil)
+    Hedefi: ${targetGoal}
+    Haftalık Müsaitlik: ${weeklyHours}
+    Odak Vakti: ${focusTime}
+    
+    Lütfen bu öğrenciye özel, alanı ile %100 uyumlu, önümüzdeki 5 günlük başlangıç ders çalışma programı oluştur.
+    
+    **DERS SEÇİM KURALLARI:**
+    - Sayısal için: MATEMATİK, FİZİK, KİMYA, BİYOLOJİ, TÜRKÇE.
+    - Sözel için: TÜRKÇE, EDEBİYAT, TARİH, COĞRAFYA, FELSEFE, DİN.
+    - Eşit Ağırlık için: MATEMATİK, TÜRKÇE, EDEBİYAT, TARİH, COĞRAFYA.
+    - Dil için: YABANCI DİL, TÜRKÇE, MATEMATİK, TARİH, COĞRAFYA.
+    
+    **KESİN KURALLAR:**
+    1. Her güne en az 2, en fazla 4 ders çalışma görevi planla.
+    2. Her gün için mutlaka bir "MATEMATİK" veya "TÜRKÇE/EDEBİYAT" görevi bulunmalıdır.
+    3. Bilişsel yükü dengele: Sayısal derslerin arasına mutlaka sözel veya hafif dersler koy.
+    4. Her gün için gün sapması ("day_offset": 0 ile 4 arasında) belirle. (0: Bugün, 1: Yarın vb.)
+    5. Görev süreleri ("estimated_time") 30 ile 120 dakika arasında olmalıdır.
+    6. Her göreve bir öncelik puanı ("priority_score": 1.0 ile 5.0 arasında) ata.
+    
+    Yanıtını sadece ve sadece belirtilen JSON formatında ver. Başka hiçbir açıklama, markdown işareti veya ek metin ekleme.
+    JSON Formatı:
+    [
+      {
+        "title": "Görev Başlığı (Örn: Fonksiyonlar Soru Çözümü)",
+        "subject_name": "Ders Adı (MATEMATİK, FİZİK, vb.)",
+        "estimated_time": TAHMİNİ_SÜRE_DAKİKA,
+        "priority_score": ÖNCELİK_PUANI,
+        "day_offset": GÜN_SAPMASI
+      }
+    ]
+  `;
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error("Gemini initial plan generation failed.");
+    }
+
+    const data = await response.json();
+    const text = data.candidates[0].content.parts[0].text;
+    return JSON.parse(text.trim());
+  } catch (error) {
+    console.error("AI Initial Plan Error, falling back:", error);
+    return [
+      { title: "Matematik Temel Tekrar", subject_name: "MATEMATİK", estimated_time: 90, priority_score: 3.0, day_offset: 0 },
+      { title: "Paragraf Hız Çalışması", subject_name: "TÜRKÇE", estimated_time: 45, priority_score: 4.0, day_offset: 0 },
+      { title: "Alan Ders Çalışması", subject_name: focusArea === "Sayısal" ? "FİZİK" : "EDEBİYAT", estimated_time: 90, priority_score: 3.0, day_offset: 1 },
+      { title: "Problem Rutini", subject_name: "MATEMATİK", estimated_time: 45, priority_score: 4.0, day_offset: 1 },
+    ];
+  }
+}
