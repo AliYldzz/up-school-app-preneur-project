@@ -33,3 +33,5 @@ web/.vite/
 *.db
 dist/
 
+
+.vercel
