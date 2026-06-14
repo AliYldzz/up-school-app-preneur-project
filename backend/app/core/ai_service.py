@@ -161,53 +161,13 @@ def reschedule_study_plan(
     other_tasks: List[Dict[str, Any]]
 ) -> List[Dict[str, Any]]:
     """Aksayan görevleri ve enerji seviyesini dikkate alarak yapay zeka ile planı yeniden düzenler"""
-    
-    prompt = f"""
-    Sen YKS (TYT/AYT) öğrencileri için akıllı bir DARR (Dynamic Adaptive Road Re-routing) planlama motorusun.
-    Öğrenci son günlerdeki çalışma planını aksattı. Kalan gün sayısı: {remaining_days}.
-    Öğrencinin hedefi: {target_goal}, Alanı: {focus_area}.
-    Mevcut Enerji Seviyesi (1-5 arası): {energy_level} (1 en yorgun, 5 en enerjik).
-    
-    Yapılamayan/Aksayan Görevler:
-    {json.dumps(incomplete_tasks, ensure_ascii=False)}
-    
-    Planlanması Gereken Diğer Görevler:
-    {json.dumps(other_tasks, ensure_ascii=False)}
-    
-    Lütfen bu görevleri öğrencinin enerji seviyesini ve kalan gün sayısını dikkate alarak önümüzdeki 5 güne (0 ile 4 arası gün sapmalarıyla) en mantıklı şekilde dağıt.
-    
-    **KESİN KURALLAR (DİKKATLE UYULACAK):**
-    1. Eğer enerji seviyesi düşükse (1 veya 2), daha kolay veya kısa süreli görevleri öne al, zor görevleri hafiflet veya sürelerini kısalt.
-    2. Enerji seviyesi yüksekse zor konuları ve yoğun seansları yerleştir.
-    3. BİLİŞSEL YÜK DENGESİ: Asla iki 'Zor' konuyu veya iki ağır sayısal dersi peş peşe planlama. Araya mutlaka sözel bir ders (Türkçe) veya hafif bir görev tampon olarak koy.
-    4. ZAYIF DERS: Öğrencinin alanı ({focus_area}) için olan kritik görevlerin priority_score değerini her zaman daha yüksek (4.0 - 5.0) tut.
-    5. Her görev için yeni bir priority_score (0.0 - 5.0 arası) belirle.
-    6. Her görev için önümüzdeki 5 gün için bir gün sapması ("day_offset": 0 ile 4 arasında bir tamsayı) belirle. (0: Bugün, 1: Yarın vb.)
-    
-    Yanıtını sadece ve sadece belirtilen JSON formatında ver. Başka hiçbir açıklama, markdown işareti veya ek metin ekleme.
-    JSON Formatı:
-    [
-      {{
-        "id": <Görevin orijinal ID'si (integer)>,
-        "title": "Görev Başlığı",
-        "subject_name": "Ders Adı (MATEMATİK, FİZİK, vb.)",
-        "estimated_time": <güncellenmiş tahmini süre (dakika)>,
-        "priority_score": <Yeni hesaplanan öncelik puanı (float)>,
-        "day_offset": <Önümüzdeki 5 gün için gün sapması (0 ile 4 arasında tamsayı)>
-      }}
-    ]
-    """
-
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json",
-            "temperature": 0.1
-        }
-    }
-
-    response_text = call_gemini_api(payload)
-    return parse_gemini_json(response_text, incomplete_tasks + other_tasks)
+    # Şimdilik rastgelelik uyguluyoruz. İleride AI planlamayı düzelteceğiz.
+    import random
+    all_tasks = incomplete_tasks + other_tasks
+    for t in all_tasks:
+        t["day_offset"] = random.randint(0, 4)
+        t["priority_score"] = 1.0
+    return all_tasks
 
 def solve_and_analyze_question(image_base64: str) -> Dict[str, Any]:
     """Hata kumbarasındaki sorunun resmini analiz eder, OCR metnini çıkarır, etiketler ve çözümü üretir"""

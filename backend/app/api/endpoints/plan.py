@@ -31,12 +31,16 @@ def reschedule_plan(
         )
         db.commit()
 
-    # 2. Yeniden planlanacak görevleri çek (completed ve deleted olmayan tüm görevler)
+    # 2. Yeniden planlanacak görevleri çek (completed ve deleted olmayan tüm görevler, Paragraf ve Problem rutinleri hariç)
     tasks_to_reschedule = db.query(Task).filter(
         Task.user_id == current_user.id,
         Task.status != "completed",
         Task.is_deleted == False
     ).all()
+    tasks_to_reschedule = [
+        t for t in tasks_to_reschedule
+        if "paragraf" not in t.title.lower() and "problem" not in t.title.lower()
+    ]
 
     if not tasks_to_reschedule:
         return {

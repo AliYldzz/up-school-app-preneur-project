@@ -138,8 +138,8 @@ function App() {
       .then(({ data: allTasks, error }) => {
         if (error) throw error;
         
-        const incomplete = allTasks.filter(t => selectedIncompleteTasks.includes(t.id));
-        const other = allTasks.filter(t => !selectedIncompleteTasks.includes(t.id) && t.status !== 'completed');
+        const incomplete = allTasks.filter(t => selectedIncompleteTasks.includes(t.id) && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem"));
+        const other = allTasks.filter(t => !selectedIncompleteTasks.includes(t.id) && t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem"));
         
         return rescheduleStudyPlan(
           getDaysRemaining(),
@@ -882,7 +882,7 @@ function App() {
               <div style={styles.formGroup}>
                 <label style={styles.rescheduleLabel}>Yapılamayan Görevler</label>
                 <div style={styles.rescheduleTaskList}>
-                  {program.filter(t => t.status !== 'completed').map((t) => {
+                  {program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).map((t) => {
                     const isChecked = selectedIncompleteTasks.includes(t.id);
                     return (
                       <div 
@@ -915,7 +915,7 @@ function App() {
                       </div>
                     );
                   })}
-                  {program.filter(t => t.status !== 'completed').length === 0 && (
+                  {program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).length === 0 && (
                     <p style={{ fontSize: '13px', color: '#64748B', textAlign: 'center', margin: '12px 0' }}>Bütün görevler tamamlanmış! Yeniden planlama gerekmiyor. 🎉</p>
                   )}
                 </div>
@@ -932,7 +932,7 @@ function App() {
                 <button 
                   style={styles.rescheduleConfirmBtn} 
                   onClick={handleRescheduleSubmit}
-                  disabled={isRescheduling || program.filter(t => t.status !== 'completed').length === 0}
+                  disabled={isRescheduling || program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).length === 0}
                 >
                   {isRescheduling ? 'Planlanıyor...' : 'Rotayı Güncelle!'}
                 </button>
@@ -1055,7 +1055,7 @@ function App() {
             <div style={styles.formGroup}>
               <label style={styles.rescheduleLabel}>Yapılamayan Görevler</label>
               <div style={styles.rescheduleTaskList}>
-                {program.filter(t => t.status !== 'completed').map((t) => {
+                {program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).map((t) => {
                   const isChecked = selectedIncompleteTasks.includes(t.id);
                   return (
                     <div 
@@ -1088,7 +1088,7 @@ function App() {
                     </div>
                   );
                 })}
-                {program.filter(t => t.status !== 'completed').length === 0 && (
+                {program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).length === 0 && (
                   <p style={{ fontSize: '13px', color: '#64748B', textAlign: 'center', margin: '12px 0' }}>Bütün görevler tamamlanmış! Yeniden planlama gerekmiyor. 🎉</p>
                 )}
               </div>
@@ -1105,7 +1105,7 @@ function App() {
               <button 
                 style={styles.rescheduleConfirmBtn} 
                 onClick={handleRescheduleSubmit}
-                disabled={isRescheduling || program.filter(t => t.status !== 'completed').length === 0}
+                disabled={isRescheduling || program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).length === 0}
               >
                 {isRescheduling ? 'Planlanıyor...' : 'Rotayı Güncelle!'}
               </button>

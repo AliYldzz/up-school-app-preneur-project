@@ -292,8 +292,8 @@ export default function HomeScreen() {
 
         const profile = store.userProfile;
         const daysRemaining = getDaysRemaining();
-        const incompleteTasks = program.filter(t => selectedIncompleteTasks.includes(t.id));
-        const otherTasks = program.filter(t => !selectedIncompleteTasks.includes(t.id) && t.status !== 'completed');
+        const incompleteTasks = program.filter(t => selectedIncompleteTasks.includes(t.id) && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem"));
+        const otherTasks = program.filter(t => !selectedIncompleteTasks.includes(t.id) && t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem"));
 
         const rescheduled = await rescheduleStudyPlan(
           daysRemaining,
@@ -443,7 +443,7 @@ export default function HomeScreen() {
             <View style={[styles.rescheduleFormGroup, { flex: 1, maxHeight: 240 }]}>
               <Text style={styles.rescheduleLabel}>Yapılamayan Görevler</Text>
               <ScrollView style={styles.rescheduleTaskList} showsVerticalScrollIndicator={true}>
-                {program.filter(t => t.status !== 'completed').map((t) => {
+                {program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).map((t) => {
                   const isChecked = selectedIncompleteTasks.includes(t.id);
                   return (
                     <TouchableOpacity 
@@ -473,7 +473,7 @@ export default function HomeScreen() {
                     </TouchableOpacity>
                   );
                 })}
-                {program.filter(t => t.status !== 'completed').length === 0 && (
+                {program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).length === 0 && (
                   <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', marginVertical: 12 }}>Bütün görevler tamamlanmış! Yeniden planlama gerekmiyor. 🎉</Text>
                 )}
               </ScrollView>
@@ -490,7 +490,7 @@ export default function HomeScreen() {
               <TouchableOpacity 
                 style={styles.rescheduleConfirmBtn} 
                 onPress={handleRescheduleSubmit}
-                disabled={isRescheduling || program.filter(t => t.status !== 'completed').length === 0}
+                disabled={isRescheduling || program.filter(t => t.status !== 'completed' && !t.title.toLowerCase().includes("paragraf") && !t.title.toLowerCase().includes("problem")).length === 0}
               >
                 <Text style={styles.rescheduleConfirmBtnText}>{isRescheduling ? 'Planlanıyor...' : 'Rotayı Güncelle!'}</Text>
               </TouchableOpacity>
