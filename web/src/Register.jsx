@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from './config';
 
 const getDynamicQuestions = () => {
   return [
@@ -104,7 +105,7 @@ export default function Register({ onBack, onRegisterSuccess }) {
       profile_pic: profilePic
     };
 
-    fetch('http://127.0.0.1:8000/api/auth/register', {
+    fetch(`${API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -121,7 +122,7 @@ export default function Register({ onBack, onRegisterSuccess }) {
       setIsAILoading(true);
       setStep(5); // AI Step
       
-      return fetch('http://127.0.0.1:8000/api/tasks/', {
+      return fetch(`${API_BASE_URL}/api/tasks/`, {
         headers: {
           'Authorization': `Bearer ${data.access_token}`
         }
@@ -173,7 +174,7 @@ export default function Register({ onBack, onRegisterSuccess }) {
         </div>
       </div>
 
-      <div className="glass-panel slide-card-container" style={styles.cardContainer}>
+      <div className="slide-card-container" style={styles.cardContainer}>
         
         {/* Step 0: Initial Form */}
         <div className={getCardClass(0)} style={{ position: animatingStep === 0 ? 'relative' : 'absolute', width: '100%' }}>
@@ -336,15 +337,15 @@ export default function Register({ onBack, onRegisterSuccess }) {
           <div style={styles.questionContainer}>
             <div style={{ position: 'relative', margin: '20px 0' }}>
               <div className="pulse-indicator" style={{ width: '80px', height: '80px', backgroundColor: 'transparent', position: 'absolute', top: -10, left: -10, zIndex: 0 }}></div>
-              <div style={{ width: '60px', height: '60px', borderRadius: '30px', backgroundColor: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, position: 'relative', boxShadow: '0 10px 25px rgba(16, 185, 129, 0.5)' }}>
+              <div style={{ width: '60px', height: '60px', borderRadius: '30px', backgroundColor: '#2ECC71', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, position: 'relative', boxShadow: '0 10px 25px rgba(46, 204, 113, 0.4)' }}>
                  <span style={{ fontSize: '30px' }}>✨</span>
               </div>
             </div>
             
-            <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#10B981', textAlign: 'center', margin: 0 }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', color: '#005D32', textAlign: 'center', margin: 0 }}>
               Senin İçin Harika Bir Plan Kuruyorum...
             </h2>
-            <p style={{ color: '#E2E8F0', fontSize: '16px', textAlign: 'center', fontWeight: '500', maxWidth: '90%', lineHeight: '1.5' }}>
+            <p style={{ color: '#4A5D4C', fontSize: '16px', textAlign: 'center', fontWeight: '500', maxWidth: '90%', lineHeight: '1.5' }}>
               Zayıf olduğun {(answers.weak_subjects || []).join(', ')} derslerini analiz edip sana özel o ilk programı çıkarıyorum. Lütfen bekle.
             </p>
           </div>
@@ -379,7 +380,7 @@ const styles = {
   topBackButton: {
     background: 'none',
     border: 'none',
-    color: '#FFFFFF',
+    color: '#4A5D4C',
     fontSize: '16px',
     fontWeight: '600',
     cursor: 'pointer',
@@ -388,13 +389,13 @@ const styles = {
   progressBar: {
     flex: 1,
     height: '8px',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#EBF0EC',
     borderRadius: '4px',
     overflow: 'hidden'
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#10B981',
+    backgroundColor: '#2ECC71',
     transition: 'width 0.3s ease'
   },
   cardContainer: {
@@ -402,6 +403,10 @@ const styles = {
     padding: '32px 24px',
     display: 'flex',
     minHeight: '400px',
+    backgroundColor: '#FFFFFF', 
+    borderRadius: '28px',
+    border: '1px solid #D5DDD6',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.03)',
   },
   questionContainer: {
     display: 'flex',
@@ -412,15 +417,16 @@ const styles = {
   questionTitle: {
     fontSize: '24px',
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     textAlign: 'center',
     margin: '0 0 8px 0',
   },
   questionSubtitle: {
     fontSize: '14px',
-    color: '#64748B',
+    color: '#005D32',
     textAlign: 'center',
     margin: '0 0 32px 0',
+    fontWeight: '600',
   },
   optionsList: {
     display: 'flex',
@@ -444,8 +450,8 @@ const styles = {
     padding: '24px 12px'
   },
   selectedOption: {
-    borderColor: '#10B981',
-    backgroundColor: '#ECFDF5',
+    borderColor: '#2ECC71',
+    backgroundColor: '#EBF5EC',
   },
   optionIcon: {
     fontSize: '28px',
@@ -460,11 +466,11 @@ const styles = {
   optionTitle: {
     fontSize: '16px',
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   optionDesc: {
     fontSize: '12px',
-    color: '#64748B',
+    color: '#6C7E6E',
     marginTop: '4px'
   },
   form: {
@@ -481,19 +487,20 @@ const styles = {
   label: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#4A5D4C',
   },
   input: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F3F6F4',
     borderRadius: '16px',
-    border: '1px solid #E2E8F0',
+    border: '1px solid #D5DDD6',
     padding: '16px',
     fontSize: '16px',
     outline: 'none',
     width: '100%',
+    color: '#1B2A1C',
   },
   registerButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#005D32',
     color: '#FFFFFF',
     fontSize: '16px',
     fontWeight: '800',
@@ -502,7 +509,7 @@ const styles = {
     border: 'none',
     cursor: 'pointer',
     marginTop: '12px',
-    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
+    boxShadow: '0 4px 14px rgba(0, 93, 50, 0.15)',
     width: '100%',
   },
   uploadContainer: {
@@ -516,8 +523,8 @@ const styles = {
     width: '120px',
     height: '120px',
     borderRadius: '60px',
-    backgroundColor: '#F1F5F9',
-    border: '2px dashed #CBD5E1',
+    backgroundColor: '#F3F6F4',
+    border: '2px dashed #D5DDD6',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -528,11 +535,11 @@ const styles = {
     height: '120px',
     borderRadius: '60px',
     objectFit: 'cover',
-    border: '4px solid #10B981',
+    border: '4px solid #2ECC71',
   },
   uploadButton: {
-    backgroundColor: '#E0F2FE',
-    color: '#0284C7',
+    backgroundColor: '#EBF5FB',
+    color: '#3498DB',
     padding: '12px 24px',
     borderRadius: '12px',
     fontSize: '14px',

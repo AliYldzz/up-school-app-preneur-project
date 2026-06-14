@@ -90,23 +90,35 @@ def generate_initial_study_plan(
     Öğrencinin bilgileri:
     - Ad Soyad: {fullName}
     - Alan: {focus_area}
-    - Özel Durum/Zayıf Dersler: {target_goal}
+    - Zayıf Dersler (TYT & AYT): {target_goal}
     - Haftalık Çalışma Saati: {weekly_hours}
     - En Verimli Zaman Dilimi: {focus_time}
     
     Aşağıda sistemimizde bulunan resmi MEB görev havuzu (Task Library) yer almaktadır:
     {task_library_json}
 
-    Lütfen bu öğrenci için önümüzdeki 7 günü kapsayan, YKS müfredatına uygun, gerçekçi ve dengeli bir çalışma planı (görev listesi) hazırla.
+    Lütfen bu öğrenci için önümüzdeki 5 günü kapsayan, YKS müfredatına uygun, gerçekçi ve dengeli bir çalışma planı (görev listesi) hazırla.
     En az 5, en fazla 7 görev seç.
 
     **KESİN KURALLAR (DİKKATLE UYULACAK):**
     1. SIFIRDAN GÖREV UYDURMA: Seçtiğin TÜM görevler SADECE VE SADECE yukarıdaki MEB görev havuzundan alınmalıdır. Listede olmayan bir görev ID'si uydurma.
-    2. ZAYIF DERSLERE ODAKLAN: Öğrencinin "Zayıf Dersler" olarak belirttiği dersleri ({target_goal}) mutlaka programa dahil et ve görevlerin en az yarısını bu derslerden seç.
-    3. ÇEŞİTLİLİK: Hep aynı dersi veya aynı konuyu seçme.
-    4. BİLİŞSEL YÜK VE MOLA YÖNETİMİ: Asla iki ağır sayısal dersi (Örn: Matematik ve Fizik) peş peşe koyma.
-    5. GÜNLERE DAĞITIM: Her görev için 0 ile 6 arasında bir "day_offset" (gün sapması) belirle. (0: Bugün, 1: Yarın, 2: Sonraki gün vb.) Bir güne en fazla 2-3 görev ata.
-    
+    2. TRUVA ATI VE GÜVEN İNŞASI (DAY 0, 1, 2 - HAYATİ): Öğrencinin plana başladığı ilk 3 gün (day_offset: 0, 1 ve 2) tamamen Güven İnşası (Confidence Building) dönemidir. Bu günlere planlanan TÜM görevler sadece öğrencinin zayıf olarak belirtmediği (yani güçlü/nötr olduğu) derslerden seçilmeli ve hepsi İSTİSNASIZ 'Kolay' seviyede olmalıdır. İlk 3 güne asla zayıf ders görevi, Orta veya Zor seviyede görev yerleştirme!
+    3. ZAYIF DERSLERE YAVAŞÇA SIZMA (PROGRESSIVE EXPOSURE - DAY 3 VE SONRASI): Öğrencinin zayıf olduğunu belirttiği derslerin görevlerini plana en erken 3. gün (day_offset: 3) ve sonrasında yavaşça dahil et. Zayıf dersin ilk görevi kesinlikle 'Kolay' seviyede ve kısa süreli (20-30 dakika) bir mikro-görev olmalı, öğrencinin güçlü olduğu derslerin arasına tamponlanmalıdır.
+    4. GÜNLÜK DAĞILIM VE BLOK ÇALIŞMA: Bir güne arka arkaya en fazla 2 aynı ders görevi atanabilir (Örn: Matematik -> Matematik). Öğrencinin zihnini taze tutmak için bir günde tek bir derse 3'ten fazla görev yığma ve aralara mutlaka farklı bir ders serpiştir.
+    5. BİLİŞSEL YÜK VE MOLA YÖNETİMİ: Asla iki ağır sayısal dersi (Örn: Matematik ve Fizik) veya iki "Zor" görevi peş peşe koyma.
+    6. KRONOLOJİK ZORLUK İLERLEMESİ (PEDAGOJİK MANTIK): Bir dersten (Örn: Matematik) plana birden fazla görev koyacaksan, bu görevlerin gün sapmaları zorluk dereceleriyle uyumlu olmalıdır. Kolay görevin gün sapması (day_offset), aynı dersin Orta veya Zor görevinin gün sapmasından kesinlikle küçük (yani takvimde daha önce) olmalıdır.
+    7. KONU ÖN KOŞUL ZİNCİRİ (EŞ ZAMANLI VE HIYERARŞİK İLERLEME): TYT ve AYT dersleri eş zamanlı paralel yürütülebilir (Örn: TYT Problemler ile AYT Logaritma aynı günlerde planlanabilir). Ancak sarmal yapı gereği şu ön koşul zincirlerine KESİNLİKLE uyulmalıdır:
+       - Matematik: 'Fonksiyonlar' konusu planlanmadan 'Türev'; 'Türev' planlanmadan 'İntegral' konusu asla planlanamaz! (Bu konuların gün sapmaları: Fonksiyonlar <= Türev <= İntegral şeklinde olmalıdır).
+       - Fizik: 'Newton\'un Hareket Yasaları' planlanmadan 'Basit Harmonik Hareket' planlanamaz!
+       - Kimya: 'Kimya Bilimi & Atomun Yapısı' planlanmadan 'Organik Kimya' planlanamaz!
+       - Biyoloji: 'Canlıların Ortak Özellikleri & Hücre' planlanmadan 'İnsan Fizyolojisi & Sistemler' planlanamaz!
+    8. GÜNLERE DAĞITIM VE LİMİT (ÇOK ÖNEMLİ): Her görev için 0 ile 4 arasında bir "day_offset" (gün sapması) belirle. (0: Bugün, 1: Yarın, 2: Sonraki gün vb.) AYNI GÜNE (aynı day_offset) asla 2'den fazla ders görevi atama (rutinler hariç). Her gün için öğrenciye otomatik olarak "30 Paragraf Sorusu (35 dk)" ve "20 Problem Sorusu (30 dk)" rutin olarak atanacaktır (toplam 65 dk rutin). Bu yüzden seçtiğin havuz görevlerinin günlük toplam süresi 80-110 dakikayı GEÇMEMELİDİR. Görevleri 5 güne (0, 1, 2, 3, 4) dengeli şekilde yay!
+
+    DİKKAT EDİLECEK ÖRNEK SENARYOLAR (FEW-SHOT PROMPTING):
+    - Hatalı Planlama (Zayıf Ders Baskısı): [Matematik-Zor (Zayıf Ders, day_offset: 0), Türkçe-Kolay (day_offset: 0)] -> Hata: İlk güne zayıf ders ve Zor seviye görev konmuş. Zayıf dersler en erken 3. gün (day_offset: 3) gelmelidir.
+    - Hatalı Planlama (Sıralama Hatası): [Fizik-Kolay (day_offset: 2), Fizik-Orta (day_offset: 0)] -> Hata: Orta seviye, Kolay seviyeden daha önce planlanmış.
+    - Doğru Planlama (Pedagojik Güven & Sızma): [Türkçe-Kolay (Güçlü/Nötr, day_offset: 0), Fizik-Kolay (Güçlü/Nötr, day_offset: 1), Türkçe-Orta (day_offset: 2), Matematik-Kolay (Zayıf Ders, day_offset: 3)] -> Harika: İlk 3 gün güçlü/nötr derslerle güven inşası yapılmış, zayıf olan Matematik dersi 3. gün kolay bir şekilde sızdırılmıştır.
+
     Yanıtını sadece ve sadece belirtilen JSON dizisi formatında ver. Başka hiçbir açıklama, markdown işareti veya ek metin ekleme.
     JSON Formatı:
     [
@@ -156,7 +168,7 @@ def reschedule_study_plan(
     Planlanması Gereken Diğer Görevler:
     {json.dumps(other_tasks, ensure_ascii=False)}
     
-    Lütfen bu görevleri öğrencinin enerji seviyesini ve kalan gün sayısını dikkate alarak önümüzdeki günlere en mantıklı şekilde dağıt.
+    Lütfen bu görevleri öğrencinin enerji seviyesini ve kalan gün sayısını dikkate alarak önümüzdeki 5 güne (0 ile 4 arası gün sapmalarıyla) en mantıklı şekilde dağıt.
     
     **KESİN KURALLAR (DİKKATLE UYULACAK):**
     1. Eğer enerji seviyesi düşükse (1 veya 2), daha kolay veya kısa süreli görevleri öne al, zor görevleri hafiflet veya sürelerini kısalt.
@@ -164,6 +176,7 @@ def reschedule_study_plan(
     3. BİLİŞSEL YÜK DENGESİ: Asla iki 'Zor' konuyu veya iki ağır sayısal dersi peş peşe planlama. Araya mutlaka sözel bir ders (Türkçe) veya hafif bir görev tampon olarak koy.
     4. ZAYIF DERS: Öğrencinin alanı ({focus_area}) için olan kritik görevlerin priority_score değerini her zaman daha yüksek (4.0 - 5.0) tut.
     5. Her görev için yeni bir priority_score (0.0 - 5.0 arası) belirle.
+    6. Her görev için önümüzdeki 5 gün için bir gün sapması ("day_offset": 0 ile 4 arasında bir tamsayı) belirle. (0: Bugün, 1: Yarın vb.)
     
     Yanıtını sadece ve sadece belirtilen JSON formatında ver. Başka hiçbir açıklama, markdown işareti veya ek metin ekleme.
     JSON Formatı:
@@ -173,7 +186,8 @@ def reschedule_study_plan(
         "title": "Görev Başlığı",
         "subject_name": "Ders Adı (MATEMATİK, FİZİK, vb.)",
         "estimated_time": <güncellenmiş tahmini süre (dakika)>,
-        "priority_score": <Yeni hesaplanan öncelik puanı (float)>
+        "priority_score": <Yeni hesaplanan öncelik puanı (float)>,
+        "day_offset": <Önümüzdeki 5 gün için gün sapması (0 ile 4 arasında tamsayı)>
       }}
     ]
     """

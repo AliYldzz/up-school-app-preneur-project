@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 const CURRICULUM = {
   'MATEMATİK': {
     icon: '📐',
-    color: '#3B82F6',
-    bgColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
+    color: '#3498DB',
+    bgColor: '#EBF5FB',
+    borderColor: '#AED6F1',
     topics: [
       'Temel Kavramlar & Sayılar',
       'Üslü ve Köklü İfadeler',
@@ -20,9 +20,9 @@ const CURRICULUM = {
   },
   'FİZİK': {
     icon: '⚡',
-    color: '#EF4444',
-    bgColor: '#FEF2F2',
-    borderColor: '#FECACA',
+    color: '#FF9875',
+    bgColor: '#FFF3F0',
+    borderColor: '#FFD8CC',
     topics: [
       'Fizik Bilimine Giriş & Madde',
       'Vektörler & Bağıl Hareket',
@@ -35,9 +35,9 @@ const CURRICULUM = {
   },
   'KİMYA': {
     icon: '🧪',
-    color: '#10B981',
-    bgColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
+    color: '#717970',
+    bgColor: '#F0F3F1',
+    borderColor: '#D1D9D2',
     topics: [
       'Kimya Bilimi & Atomun Yapısı',
       'Periyodik Sistem & Kimyasal Türler',
@@ -49,9 +49,9 @@ const CURRICULUM = {
   },
   'BİYOLOJİ': {
     icon: '🧬',
-    color: '#F97316',
-    bgColor: '#FFF7ED',
-    borderColor: '#FFEDD5',
+    color: '#E67E22',
+    bgColor: '#FDF2E9',
+    borderColor: '#FDEBD0',
     topics: [
       'Canlıların Ortak Özellikleri & Hücre',
       'Canlılar Dünyası & Kalıtım',
@@ -62,9 +62,9 @@ const CURRICULUM = {
   },
   'TÜRKÇE': {
     icon: '📝',
-    color: '#8B5CF6',
-    bgColor: '#F5F3FF',
-    borderColor: '#DDD6FE',
+    color: '#005D32',
+    bgColor: '#EBF5EC',
+    borderColor: '#C7E9C0',
     topics: [
       'Sözcükte ve Cümlede Anlam',
       'Paragrafta Anlam ve Yapı',
@@ -155,19 +155,19 @@ export default function Lessons({ onBack }) {
     <div style={styles.container}>
       {/* Header */}
       <div style={styles.header}>
-        <button onClick={onBack} style={styles.backButton} title="Geri Dön">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
+        <button style={styles.backButton} onClick={onBack}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1B2A1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
           </svg>
         </button>
-        <h2 style={styles.headerTitle}>Ders Müfredat Takibi 📊</h2>
+        <h2 style={styles.headerTitle}>Ders Müfredat Takibi</h2>
         <div style={{ width: '32px' }} /> {/* Spacing helper */}
       </div>
 
       <div style={styles.content}>
         {/* Arama Barı */}
         <div style={styles.searchContainer}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2.5" style={styles.searchIcon}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6C7E6E" strokeWidth="2.5" style={styles.searchIcon}>
             <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
           <input
@@ -186,7 +186,7 @@ export default function Lessons({ onBack }) {
         {filteredSubjects.length === 0 ? (
           <div style={styles.emptySearchState}>
             <span>🔍</span>
-            <p style={{ margin: '8px 0 0', fontWeight: '600', color: '#64748B' }}>
+            <p style={{ margin: '8px 0 0', fontWeight: '600', color: '#6C7E6E' }}>
               Aramanızla eşleşen bir konu bulunamadı.
             </p>
           </div>
@@ -223,7 +223,7 @@ export default function Lessons({ onBack }) {
                       
                       {/* Aç/Kapat İkonu */}
                       <svg 
-                        width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5"
+                        width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C7E6E" strokeWidth="2.5"
                         style={{
                           transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
                           transition: 'transform 0.2s ease'
@@ -250,7 +250,7 @@ export default function Lessons({ onBack }) {
                           >
                             <span style={{
                               ...styles.topicText,
-                              color: isCompleted ? '#0F172A' : '#475569',
+                              color: isCompleted ? '#6C7E6E' : '#1B2A1C',
                               textDecoration: isCompleted ? 'line-through' : 'none'
                             }}>
                               {topic}
@@ -259,8 +259,8 @@ export default function Lessons({ onBack }) {
                             {/* Checkbox */}
                             <div style={{
                               ...styles.checkbox,
-                              backgroundColor: isCompleted ? '#10B981' : '#FFFFFF',
-                              borderColor: isCompleted ? '#10B981' : '#CBD5E1',
+                              backgroundColor: isCompleted ? '#2ECC71' : '#FFFFFF',
+                              borderColor: isCompleted ? '#2ECC71' : '#CBD5E1',
                             }}>
                               {isCompleted && (
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="4">
@@ -285,11 +285,9 @@ export default function Lessons({ onBack }) {
 
 const styles = {
   container: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'transparent',
     minHeight: '100vh',
     width: '100%',
-    maxWidth: '440px',
-    margin: '0 auto',
     paddingBottom: '100px',
     fontFamily: "'Inter', sans-serif",
   },
@@ -298,8 +296,8 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E2E8F0',
+    backgroundColor: 'transparent',
+    borderBottom: '1px solid #D5DDD6',
   },
   backButton: {
     background: 'none',
@@ -312,7 +310,7 @@ const styles = {
   headerTitle: {
     fontSize: '18px',
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     margin: 0,
   },
   content: {
@@ -336,16 +334,16 @@ const styles = {
     width: '100%',
     padding: '14px 16px 14px 44px',
     backgroundColor: '#FFFFFF',
-    border: '1px solid #E2E8F0',
+    border: '1px solid #D5DDD6',
     borderRadius: '16px',
     fontSize: '14px',
     fontWeight: '500',
-    color: '#1E293B',
+    color: '#1B2A1C',
     outline: 'none',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)',
     transition: 'all 0.2s',
     '::placeholder': {
-      color: '#94A3B8'
+      color: '#6C7E6E'
     }
   },
   clearSearchBtn: {
@@ -353,7 +351,7 @@ const styles = {
     right: '14px',
     background: 'none',
     border: 'none',
-    color: '#94A3B8',
+    color: '#6C7E6E',
     cursor: 'pointer',
     fontSize: '14px',
     padding: '4px'
@@ -403,7 +401,7 @@ const styles = {
   },
   progressText: {
     fontSize: '12px',
-    color: '#64748B',
+    color: '#6C7E6E',
     fontWeight: '600',
   },
   headerRight: {
@@ -414,7 +412,7 @@ const styles = {
   smallProgressTrack: {
     width: '60px',
     height: '6px',
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#D5DDD6',
     borderRadius: '3px',
     overflow: 'hidden',
   },
@@ -424,8 +422,8 @@ const styles = {
     transition: 'width 0.3s ease',
   },
   topicsContainer: {
-    borderTop: '1px solid #F1F5F9',
-    backgroundColor: '#F8FAFC',
+    borderTop: '1px solid #EBF0EC',
+    backgroundColor: '#F3F6F4',
     display: 'flex',
     flexDirection: 'column',
   },
@@ -434,7 +432,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottom: '1px solid #F1F5F9',
+    borderBottom: '1px solid #EBF0EC',
     cursor: 'pointer',
     userSelect: 'none',
     transition: 'all 0.15s ease',

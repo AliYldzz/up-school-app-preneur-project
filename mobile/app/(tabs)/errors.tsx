@@ -96,10 +96,10 @@ export default function ErrorsScreen() {
   };
 
   return (
-    <LinearGradient colors={['#0B1E36', '#115E59', '#064E3B']} style={styles.container}>
+    <LinearGradient colors={['#EBF0EC', '#CBE0D1']} style={styles.container}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <View style={styles.header}>
-          <Ionicons name="bulb-outline" size={28} color="#A7F3D0" />
+          <Ionicons name="bulb-outline" size={28} color="#005D32" />
           <Text style={styles.headerTitle}>Hata Kumbarası</Text>
         </View>
 
@@ -121,7 +121,7 @@ export default function ErrorsScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity style={[styles.actionBtn, styles.actionBtnSecondary]} onPress={() => pickImage(false)}>
-                <Ionicons name="image" size={24} color="#0284C7" />
+                <Ionicons name="image" size={24} color="#005D32" />
                 <Text style={styles.actionBtnTextSecondary}>Galeriden Seç</Text>
               </TouchableOpacity>
             </View>
@@ -137,12 +137,12 @@ export default function ErrorsScreen() {
 
             {loading ? (
               <View style={styles.loadingContainer}>
-                <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#10B981', justifyContent: 'center', alignItems: 'center', marginBottom: 20, shadowColor: '#10B981', shadowOpacity: 0.5, shadowRadius: 20, shadowOffset: {width:0, height:10}, elevation: 10 }}>
+                <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: '#005D32', justifyContent: 'center', alignItems: 'center', marginBottom: 20, shadowColor: '#005D32', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: {width:0, height:4}, elevation: 5 }}>
                   <Text style={{ fontSize: 40 }}>✨</Text>
                 </View>
                 <Text style={styles.loadingText}>Yapay Zeka Soruyu Gözünden Okuyor...</Text>
                 <Text style={styles.loadingSubtext}>Müfredat kontrol ediliyor ve çözüm hazırlanıyor.</Text>
-                <ActivityIndicator size="large" color="#10B981" style={{ marginTop: 20 }} />
+                <ActivityIndicator size="large" color="#005D32" style={{ marginTop: 20 }} />
               </View>
             ) : solutionData ? (
               <View style={styles.solutionCard}>
@@ -179,6 +179,7 @@ export default function ErrorsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#EBF0EC',
   },
   header: {
     flexDirection: 'row',
@@ -186,14 +187,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: '#D5DDD6',
     backgroundColor: 'transparent',
     gap: 8,
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1B2A1C',
   },
   scroll: {
     padding: 20,
@@ -202,30 +203,37 @@ const styles = StyleSheet.create({
   },
   emptyStateContainer: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 28,
     padding: 32,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#D5DDD6',
+    shadowColor: '#1B2A1C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.01,
+    shadowRadius: 10,
+    elevation: 1,
   },
   emptyIconCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#F3F6F4',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
   },
   emptyStateTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1B2A1C',
     marginBottom: 10,
   },
   emptyStateDesc: {
     fontSize: 14,
-    color: '#E2E8F0',
+    color: '#6C7E6E',
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
@@ -244,17 +252,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionBtnPrimary: {
-    backgroundColor: '#10B981',
-    shadowColor: '#10B981',
+    backgroundColor: '#005D32',
+    shadowColor: '#005D32',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   actionBtnSecondary: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: '#D5DDD6',
   },
   actionBtnTextPrimary: {
     color: '#FFF',
@@ -262,7 +270,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   actionBtnTextSecondary: {
-    color: '#FFFFFF',
+    color: '#1B2A1C',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -275,8 +283,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 16,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#F3F6F4',
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
   },
   resetButton: {
     flexDirection: 'row',
@@ -296,31 +306,43 @@ const styles = StyleSheet.create({
   loadingContainer: {
     alignItems: 'center',
     padding: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     width: '100%',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: '#D5DDD6',
+    shadowColor: '#1B2A1C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.01,
+    shadowRadius: 10,
+    elevation: 1,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 18,
     fontWeight: '800',
-    color: '#10B981',
+    color: '#005D32',
     textAlign: 'center',
   },
   loadingSubtext: {
     marginTop: 8,
     fontSize: 14,
-    color: '#E2E8F0',
+    color: '#6C7E6E',
     textAlign: 'center',
   },
   solutionCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 24,
     width: '100%',
     marginBottom: 40,
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
+    shadowColor: '#1B2A1C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.01,
+    shadowRadius: 10,
+    elevation: 1,
   },
   solutionHeader: {
     flexDirection: 'row',
@@ -329,12 +351,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#D5DDD6',
   },
   solutionHeaderTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#10B981',
+    color: '#005D32',
   },
   tagsRow: {
     flexDirection: 'row',
@@ -354,7 +376,7 @@ const styles = StyleSheet.create({
   },
   solutionContent: {
     fontSize: 15,
-    color: '#334155',
+    color: '#1B2A1C',
     lineHeight: 24,
   },
 });

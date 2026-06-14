@@ -65,6 +65,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
 # CRUD Rotalarını uygulamaya dahil et
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
@@ -72,6 +76,35 @@ app.include_router(error_vault.router, prefix="/api/errors", tags=["errors"])
 app.include_router(plan.router, prefix="/api/plan", tags=["plan"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 
-@app.get("/")
-def read_root():
-    return {"message": "API çalışıyor. DARR motoru hazır!"}
+# Frontend (Vite) static files serving
+frontend_dist_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "dist"
+)
+
+if not os.path.exists(frontend_dist_dir):
+    frontend_dist_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+        "web",
+        "dist"
+    )
+
+if os.path.exists(frontend_dist_dir):
+    assets_dir = os.path.join(frontend_dist_dir, "assets")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    @app.get("/{rest_of_path:path}")
+    async def serve_frontend(rest_of_path: str):
+        if rest_of_path.startswith("api"):
+            return {"detail": "Not Found"}
+            
+        file_path = os.path.join(frontend_dist_dir, rest_of_path)
+        if rest_of_path and os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+            
+        return FileResponse(os.path.join(frontend_dist_dir, "index.html"))
+else:
+    @app.get("/")
+    def read_root():
+        return {"message": "API çalışıyor. DARR motoru hazır! (Frontend build henüz derlenmemiş)"}

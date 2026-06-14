@@ -91,6 +91,10 @@ const INITIAL_PROGRAM = [
   },
 ];
 
+const cleanTitle = (title: string) => {
+  return title ? title.replace(/\s*\((Kolay|Orta|Zor)\)/g, '') : '';
+};
+
 export default function HomeScreen() {
   const [program, setProgram] = useState<any[]>([]);
   const [showCelebration, setShowCelebration] = useState(false);
@@ -98,21 +102,42 @@ export default function HomeScreen() {
   const [energyLevel, setEnergyLevel] = useState(3);
   const [selectedIncompleteTasks, setSelectedIncompleteTasks] = useState<number[]>([]);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [consecutiveLowEnergyCount, setConsecutiveLowEnergyCount] = useState(0);
   
   const [userInfo, setUserInfo] = useState({
     fullName: 'Geleceğin Şampiyonu',
     targetGoal: 'İlk 5000',
     focusArea: 'Sayısal',
     profilePic: null as string | null,
-    streakDays: 0
+    streakDays: 0,
+    examDate: null as string | null,
   });
 
   const getDaysRemaining = () => {
-    const examDate = new Date('2026-06-13T10:00:00'); // YKS 2026
+    let targetDateStr = userInfo.examDate;
+    if (!targetDateStr) {
+      const today = new Date();
+      const exam2026 = new Date('2026-06-13T10:00:00');
+      if (today > exam2026) {
+        targetDateStr = '2027-06-19T10:00:00'; // YKS 2027
+      } else {
+        targetDateStr = '2026-06-13T10:00:00'; // YKS 2026
+      }
+    }
+    const examDate = new Date(targetDateStr);
     const today = new Date();
     const diffTime = examDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays > 0 ? diffDays : 0;
+  };
+
+  const getExamYear = () => {
+    if (userInfo.examDate) {
+      return new Date(userInfo.examDate).getFullYear();
+    }
+    const today = new Date();
+    const exam2026 = new Date('2026-06-13T10:00:00');
+    return today > exam2026 ? 2027 : 2026;
   };
 
   const loadTasksAndUser = () => {
@@ -134,7 +159,8 @@ export default function HomeScreen() {
         fullName: data.fullName,
         targetGoal: data.target_goal,
         focusArea: data.focus_area,
-        profilePic: data.profile_pic
+        profilePic: data.profile_pic,
+        examDate: data.exam_date
       }));
     })
     .catch(() => {});
@@ -174,8 +200,8 @@ export default function HomeScreen() {
             title: ct.title,
             timeRange: `${ct.estimated_time} dakika`,
             status: ct.status,
-            color: ct.subject_name === 'MATEMATİK' ? '#3B82F6' : ct.subject_name === 'FİZİK' ? '#EF4444' : ct.subject_name === 'TÜRKÇE' ? '#8B5CF6' : '#F97316',
-            bgColor: ct.subject_name === 'MATEMATİK' ? '#EFF6FF' : ct.subject_name === 'FİZİK' ? '#FEF2F2' : ct.subject_name === 'TÜRKÇE' ? '#F5F3FF' : '#FFF7ED'
+            color: ct.subject_name === 'MATEMATİK' ? '#2E86C1' : ct.subject_name === 'FİZİK' ? '#E74C3C' : ct.subject_name === 'TÜRKÇE' ? '#9B59B6' : '#E67E22',
+            bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FDEDEC' : ct.subject_name === 'TÜRKÇE' ? '#F5EEF8' : '#FDF2E9'
           }));
         setProgram(formatted);
       }
@@ -199,43 +225,72 @@ export default function HomeScreen() {
   const handleRescheduleSubmit = () => {
     if (!store.token) return;
 
-    setIsRescheduling(true);
-    fetch(`${API_BASE_URL}/api/plan/reschedule`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${store.token}`
-      },
-      body: JSON.stringify({
-        reason: 'skipped_by_user',
-        incomplete_task_ids: selectedIncompleteTasks,
-        current_energy_level: energyLevel
+    const performReschedule = () => {
+      setIsRescheduling(true);
+      fetch(`${API_BASE_URL}/api/plan/reschedule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${store.token}`
+        },
+        body: JSON.stringify({
+          reason: 'skipped_by_user',
+          incomplete_task_ids: selectedIncompleteTasks,
+          current_energy_level: energyLevel
+        })
       })
-    })
-    .then(res => {
-      if (res.ok) return res.json();
-      throw new Error('Yeniden planlama başarısız oldu.');
-    })
-    .then(data => {
-      setIsRescheduling(false);
-      setShowRescheduleModal(false);
-      
-      const formatted = data.scheduled_tasks.map((ct: any) => ({
-        id: ct.id,
-        subject: ct.subject_name,
-        title: ct.title,
-        timeRange: `${ct.estimated_time} dakika`,
-        status: ct.status,
-        color: ct.subject_name === 'MATEMATİK' ? '#3B82F6' : ct.subject_name === 'FİZİK' ? '#EF4444' : ct.subject_name === 'TÜRKÇE' ? '#8B5CF6' : '#F97316',
-        bgColor: ct.subject_name === 'MATEMATİK' ? '#EFF6FF' : ct.subject_name === 'FİZİK' ? '#FEF2F2' : ct.subject_name === 'TÜRKÇE' ? '#F5F3FF' : '#FFF7ED'
-      }));
-      setProgram(formatted);
-      Alert.alert('Başarılı', 'Planınız başarıyla güncellendi.');
-    })
-    .catch(err => {
-      setIsRescheduling(false);
-      Alert.alert('Hata', err.message || 'Plan yeniden düzenlenirken bir hata oluştu.');
-    });
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Yeniden planlama başarısız oldu.');
+      })
+      .then(data => {
+        setIsRescheduling(false);
+        setShowRescheduleModal(false);
+        
+        const formatted = data.scheduled_tasks.map((ct: any) => ({
+          id: ct.id,
+          subject: ct.subject_name,
+          title: ct.title,
+          timeRange: `${ct.estimated_time} dakika`,
+          status: ct.status,
+          color: ct.subject_name === 'MATEMATİK' ? '#2E86C1' : ct.subject_name === 'FİZİK' ? '#E74C3C' : ct.subject_name === 'TÜRKÇE' ? '#9B59B6' : '#E67E22',
+          bgColor: ct.subject_name === 'MATEMATİK' ? '#EBF5FB' : ct.subject_name === 'FİZİK' ? '#FDEDEC' : ct.subject_name === 'TÜRKÇE' ? '#F5EEF8' : '#FDF2E9'
+        }));
+        setProgram(formatted);
+        Alert.alert('Başarılı', 'Planınız başarıyla güncellendi.');
+      })
+      .catch(err => {
+        setIsRescheduling(false);
+        Alert.alert('Hata', err.message || 'Plan yeniden düzenlenirken bir hata oluştu.');
+      });
+    };
+
+    if (energyLevel <= 2) {
+      const nextCount = consecutiveLowEnergyCount + 1;
+      setConsecutiveLowEnergyCount(nextCount);
+      if (nextCount >= 3) {
+        Alert.alert(
+          "Meydan Okuma Zamanı! 🎯",
+          "Üst üste 3 kez düşük enerji seviyesi seçtin. Unutma, YKS sürecinde disiplin ve süreklilik şampiyonları belirler! Biraz gayret edip bugün kendine meydan okumaya ne dersin? Yeni rotayı yine de oluşturmak istiyor musun?",
+          [
+            {
+              text: "Vazgeç, Devam Edeceğim",
+              onPress: () => {},
+              style: "cancel"
+            },
+            {
+              text: "Evet, Planı Güncelle",
+              onPress: performReschedule
+            }
+          ]
+        );
+        return;
+      }
+    } else {
+      setConsecutiveLowEnergyCount(0);
+    }
+
+    performReschedule();
   };
 
   const completedTasks = program.filter(t => t.status === 'completed').length;
@@ -255,7 +310,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <LinearGradient colors={['#0B1E36', '#115E59', '#064E3B']} style={styles.container}>
+    <LinearGradient colors={['#EBF0EC', '#CBE0D1']} style={styles.container}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         <Modal visible={showCelebration} animationType="fade" transparent={true}>
         <View style={styles.celebrationOverlay}>
@@ -286,7 +341,12 @@ export default function HomeScreen() {
                 {[1, 2, 3, 4, 5].map((level) => (
                   <TouchableOpacity
                     key={level}
-                    onPress={() => setEnergyLevel(level)}
+                    onPress={() => {
+                      setEnergyLevel(level);
+                      if (level >= 3) {
+                        setConsecutiveLowEnergyCount(0);
+                      }
+                    }}
                     style={[
                       styles.energyBtn,
                       energyLevel === level ? styles.energyBtnActive : styles.energyBtnInactive
@@ -321,7 +381,7 @@ export default function HomeScreen() {
                     >
                       <View style={{ flex: 1, gap: 2 }}>
                         <Text style={{ fontSize: 10, fontWeight: '800', color: t.color }}>{t.subject}</Text>
-                        <Text style={styles.rescheduleTaskTitle} numberOfLines={1}>{t.title}</Text>
+                        <Text style={styles.rescheduleTaskTitle} numberOfLines={1}>{cleanTitle(t.title)}</Text>
                       </View>
                       <View style={[
                         styles.rescheduleCheckbox,
@@ -414,11 +474,11 @@ export default function HomeScreen() {
 
           {/* Welcome Text */}
           <View style={styles.welcomeContainer}>
-            <Text style={[styles.welcomeText, {color: '#E2E8F0'}]}>Günaydın şampiyon,</Text>
-            <Text style={[styles.nameText, {color: '#FFFFFF'}]}>{userInfo.fullName}!</Text>
+            <Text style={[styles.welcomeText, {color: '#EBF0EC'}]}>YKS {getExamYear()} SERÜVENİ</Text>
+            <Text style={[styles.nameText, {color: '#FFFFFF'}]}>Tekrar hoş geldin, {userInfo.fullName.split(' ')[0]}!</Text>
             <View style={styles.levelBadge}>
               <Ionicons name="star" size={12} color="#F59E0B" />
-              <Text style={styles.levelText}>Hedeflerine bir adım daha yakınsın 🚀</Text>
+              <Text style={styles.levelText}>Bugün hedeflerine ulaşmak için harika bir gün. Odaklan ve başla! 🚀</Text>
             </View>
           </View>
 
@@ -426,7 +486,7 @@ export default function HomeScreen() {
           <View style={styles.progressSection}>
             <View style={styles.progressHeader}>
               <Text style={[styles.sectionTitle, {color: '#FFFFFF'}]}>Bugünün İlerlemesi</Text>
-              <Text style={styles.progressText}>{completedTasks} / {totalTasks}</Text>
+              <Text style={[styles.progressText, {color: '#2ECC71'}]}>{completedTasks} / {totalTasks}</Text>
             </View>
             <View style={styles.progressBarBackground}>
               <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
@@ -439,11 +499,7 @@ export default function HomeScreen() {
           {/* Countdown Section */}
           <View style={styles.countdownSection}>
             <View style={styles.countdownLeft}>
-              <Text style={styles.countdownLabel}>YKS 2026'YA KALAN SÜRE</Text>
-              <View style={styles.countdownTarget}>
-                <Ionicons name="flag" size={14} color="#3498DB" />
-                <Text style={styles.countdownTargetText}>Hedef: {userInfo.targetGoal}</Text>
-              </View>
+              <Text style={styles.countdownLabel}>YKS {getExamYear()}'YE KALAN SÜRE</Text>
             </View>
             <View style={styles.countdownRight}>
               <Text style={styles.countdownBigText}>{getDaysRemaining()}</Text>
@@ -462,7 +518,7 @@ export default function HomeScreen() {
             activeOpacity={0.8}
           >
              <LinearGradient 
-                colors={['#10B981', '#059669']} 
+                colors={['#005D32', '#004222']} 
                 style={styles.aiMagicBtn}
                 start={{x: 0, y: 0}} end={{x: 1, y: 1}}
              >
@@ -478,7 +534,11 @@ export default function HomeScreen() {
         {/* IMAGE-EXACT: Today's Tasks Section */}
         <View style={styles.programSectionContainer}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 12 }}>
-            <Text style={[styles.sectionTitleLeft, { marginBottom: 0, color: '#FFFFFF' }]}>Bugünkü Görevler</Text>
+            <Text style={[styles.sectionTitleLeft, { marginBottom: 0, color: '#1B2A1C' }]}>
+              {program.length > 0 && program.every(t => t.title.includes('(Kolay)')) 
+                ? 'Bugünkü Görevler (Isınma Turu 🔥)' 
+                : 'Bugünkü Görevler'}
+            </Text>
           </View>
           
           <View style={styles.taskList}>
@@ -495,18 +555,18 @@ export default function HomeScreen() {
                 {/* Left Icon */}
                 <View style={styles.taskIconContainer}>
                   {item.status === 'completed' && (
-                    <View style={[styles.iconCircle, { backgroundColor: '#ECFDF5' }]}>
-                      <Ionicons name="checkmark-outline" size={24} color="#10B981" />
+                    <View style={[styles.iconCircle, { backgroundColor: '#EBF5EC' }]}>
+                      <Ionicons name="checkmark-outline" size={24} color="#2ECC71" />
                     </View>
                   )}
                   {item.status === 'in_progress' && (
-                    <View style={[styles.iconCircle, { backgroundColor: '#FEF3C7' }]}>
-                      <Ionicons name="pause" size={20} color="#D97706" style={{ marginLeft: 2 }} />
+                    <View style={[styles.iconCircle, { backgroundColor: '#FDEDEC' }]}>
+                      <Ionicons name="pause" size={20} color="#E74C3C" style={{ marginLeft: 2 }} />
                     </View>
                   )}
                   {(item.status === 'active' || item.status === 'pending') && (
-                    <View style={[styles.iconCircle, { backgroundColor: '#E0F2FE' }]}>
-                      <Ionicons name="play" size={20} color="#0284C7" style={{ marginLeft: 2 }} />
+                    <View style={[styles.iconCircle, { backgroundColor: '#EBF5EC' }]}>
+                      <Ionicons name="play" size={20} color="#005D32" style={{ marginLeft: 2 }} />
                     </View>
                   )}
                 </View>
@@ -523,7 +583,7 @@ export default function HomeScreen() {
                       <Text style={styles.timeRangeText}>{item.timeRange}</Text>
                     )}
                   </View>
-                  <Text style={styles.taskTitle}>{item.title}</Text>
+                  <Text style={styles.taskTitle}>{cleanTitle(item.title)}</Text>
                 </View>
 
                 {/* Right Action */}
@@ -544,7 +604,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#F4F7F9' 
+    backgroundColor: '#EBF0EC' 
   },
   scroll: { 
     padding: 16, 
@@ -552,15 +612,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mainCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#1B2A1C',
     borderRadius: 28,
     padding: 24,
     width: '100%',
     maxWidth: 440,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1.5,
+    borderColor: '#005D32',
     gap: 16,
     marginBottom: 24,
+    shadowColor: '#1B2A1C',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
   },
   headerRow: {
     flexDirection: 'row',
@@ -571,9 +636,9 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
-    borderColor: '#CBD5E1',
+    borderColor: '#D5DDD6',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -581,51 +646,55 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: 'rgba(239, 68, 68, 0.2)',
   },
   welcomeContainer: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   welcomeText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#2ECC71',
+    letterSpacing: 1,
   },
   nameText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    color: '#243B55',
-    marginTop: 2,
+    color: '#FFFFFF',
+    marginTop: 4,
+    marginBottom: 6,
   },
   levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF3C7',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 12,
-    marginTop: 6,
-    gap: 4,
+    marginTop: 2,
+    gap: 6,
   },
   levelText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#B45309',
+    color: '#EBF0EC',
   },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EF4444', 
+    backgroundColor: '#005D32', 
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 16,
     borderTopLeftRadius: 24,
     borderBottomRightRadius: 24,
     gap: 4,
+    borderWidth: 1,
+    borderColor: '#2ECC71',
   },
   streakText: {
     fontSize: 13,
@@ -643,21 +712,21 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#243B55',
+    color: '#1B2A1C',
   },
   progressText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#3498DB',
+    color: '#2ECC71',
   },
   progressBarBackground: {
     height: 12,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 6,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     overflow: 'hidden',
   },
   progressBarFill: {
@@ -682,7 +751,7 @@ const styles = StyleSheet.create({
   sectionTitleLeft: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#1B2A1C',
     marginLeft: 4,
   },
   taskList: {
@@ -695,20 +764,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
+    borderColor: '#D5DDD6',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
+    shadowOpacity: 0.01,
     shadowRadius: 4,
     elevation: 1,
   },
   taskCardActive: {
-    borderColor: '#3B82F6',
+    borderColor: '#005D32',
     borderWidth: 2,
     padding: 15, // offset border
-    shadowColor: '#3B82F6',
+    shadowColor: '#005D32',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 4,
   },
@@ -744,18 +813,18 @@ const styles = StyleSheet.create({
   nowBadge: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#0284C7',
+    color: '#005D32',
     letterSpacing: 0.5,
   },
   timeRangeText: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#6C7E6E',
     fontWeight: '500',
   },
   taskTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#1B2A1C',
     lineHeight: 18,
   },
   kebabButton: {
@@ -764,14 +833,14 @@ const styles = StyleSheet.create({
 
   // Countdown Styles
   countdownSection: {
-    backgroundColor: '#F0F9FF', 
+    backgroundColor: 'rgba(255, 255, 255, 0.08)', 
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: '#BAE6FD',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   countdownLeft: {
     flex: 1,
@@ -779,7 +848,7 @@ const styles = StyleSheet.create({
   countdownLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#3498DB',
+    color: '#2ECC71',
     marginBottom: 4,
     letterSpacing: 0.5,
   },
@@ -791,7 +860,7 @@ const styles = StyleSheet.create({
   countdownTargetText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#0369A1',
+    color: '#EBF0EC',
   },
   countdownRight: {
     backgroundColor: '#FFFFFF',
@@ -800,29 +869,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#3498DB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
     borderWidth: 1,
-    borderColor: '#E0F2FE',
+    borderColor: '#D5DDD6',
   },
   countdownBigText: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#243B55',
+    color: '#1B2A1C',
     lineHeight: 28,
   },
   countdownSmallText: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#64748B',
+    color: '#6C7E6E',
     letterSpacing: 1,
   },
   celebrationOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    backgroundColor: 'rgba(27, 42, 28, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -850,12 +914,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   celebrationButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#005D32',
     borderRadius: 12,
     paddingVertical: 16,
     paddingHorizontal: 48,
     alignItems: 'center',
-    shadowColor: '#10B981',
+    shadowColor: '#005D32',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.4,
     shadowRadius: 15,
@@ -870,9 +934,9 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 440,
     marginBottom: 24,
-    shadowColor: '#10B981',
+    shadowColor: '#005D32',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 8,
   },
@@ -883,7 +947,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   aiMagicIcon: {
     fontSize: 28,
@@ -894,14 +958,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   aiMagicSubtitle: {
-    color: 'rgba(255,255,255,0.9)',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 12,
     fontWeight: '500',
     marginTop: 2,
   },
   rescheduleOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: 'rgba(27, 42, 28, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
@@ -913,20 +977,22 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     gap: 16,
-    shadowColor: '#000',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 15,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
   },
   rescheduleTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   rescheduleSubtitle: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#6C7E6E',
     lineHeight: 16,
   },
   rescheduleFormGroup: {
@@ -935,7 +1001,7 @@ const styles = StyleSheet.create({
   rescheduleLabel: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#475569',
+    color: '#4A5D4C',
   },
   energySelector: {
     flexDirection: 'row',
@@ -949,10 +1015,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   energyBtnActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#005D32',
   },
   energyBtnInactive: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F3F6F4',
   },
   energyBtnText: {
     fontSize: 14,
@@ -962,7 +1028,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   energyBtnTextInactive: {
-    color: '#475569',
+    color: '#6C7E6E',
   },
   rescheduleTaskList: {
     marginTop: 4,
@@ -977,17 +1043,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   rescheduleTaskRowChecked: {
-    borderColor: '#FCA5A5',
-    backgroundColor: '#FEF2F2',
+    borderColor: 'rgba(239, 68, 68, 0.3)',
+    backgroundColor: 'rgba(239, 68, 68, 0.03)',
   },
   rescheduleTaskRowUnchecked: {
-    borderColor: '#E2E8F0',
+    borderColor: '#D5DDD6',
     backgroundColor: '#FFFFFF',
   },
   rescheduleTaskTitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   rescheduleCheckbox: {
     width: 18,
@@ -998,12 +1064,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rescheduleCheckboxChecked: {
-    backgroundColor: '#EF4444',
-    borderColor: '#EF4444',
+    backgroundColor: '#005D32',
+    borderColor: '#005D32',
   },
   rescheduleCheckboxUnchecked: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#CBD5E1',
+    borderColor: '#D5DDD6',
   },
   rescheduleActions: {
     flexDirection: 'row',
@@ -1014,19 +1080,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#D5DDD6',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
   },
   rescheduleCancelBtnText: {
-    color: '#64748B',
+    color: '#6C7E6E',
     fontSize: 14,
     fontWeight: '700',
   },
   rescheduleConfirmBtn: {
     flex: 2,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#005D32',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',

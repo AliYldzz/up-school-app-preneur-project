@@ -9,117 +9,194 @@ from datetime import datetime, timedelta
 
 router = APIRouter()
 
-@router.get("/", response_model=list[TaskResponse])
-def get_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Aktif kullanıcının silinmemiş görevlerini listeler (READ). Boşsa AI planı veya varsayılan planı üretir."""
+def generate_weekly_plan(current_user: User, db: Session, start_date):
+    from app.core.ai_service import generate_initial_study_plan
+    from app.core.config import GEMINI_API_KEY
+    from app.models.task_template import TaskTemplate
+    import random
+    
+    # 1. Programatik olarak her güne Paragraf ve Problem rutinlerini ekle
+    # 5 gün (offset 0'dan 4'e kadar)
+    for day_offset in range(5):
+        target_date = (start_date + timedelta(days=day_offset)).strftime("%Y-%m-%d")
+        
+        # Paragraf rutini
+        paragraf_task = Task(
+            title="30 Paragraf Sorusu [TYT]",
+            status="pending",
+            priority_score=5.0,
+            subject_name="TÜRKÇE",
+            estimated_time=35,
+            actual_time=0,
+            scheduled_date=target_date,
+            user_id=current_user.id,
+            version=1,
+            is_deleted=False
+        )
+        db.add(paragraf_task)
+        
+        # Problem rutini
+        problem_task = Task(
+            title="20 Problem Sorusu [TYT]",
+            status="pending",
+            priority_score=5.0,
+            subject_name="MATEMATİK",
+            estimated_time=30,
+            actual_time=0,
+            scheduled_date=target_date,
+            user_id=current_user.id,
+            version=1,
+            is_deleted=False
+        )
+        db.add(problem_task)
+    db.commit()
+
+    # 2. Ana ders görevlerini seç ve dağıt
+    available_templates = db.query(TaskTemplate).all()
+    user_focus = current_user.focus_area or "Sayısal"
+    filtered_templates = [
+        t for t in available_templates 
+        if t.allowed_fields and user_focus in t.allowed_fields
+    ]
+    if not filtered_templates:
+        filtered_templates = [t for t in available_templates if t.exam_type == "TYT"]
+
+    # Try Gemini
+    if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
+        try:
+            template_data = [
+                {
+                    "id": t.id,
+                    "subject": t.subject_name,
+                    "topic": t.topic,
+                    "level": t.level,
+                    "time": t.estimated_time
+                } for t in filtered_templates
+            ]
+
+            ai_plan = generate_initial_study_plan(
+                fullName=current_user.fullName or "Öğrenci",
+                focus_area=user_focus,
+                target_goal=current_user.target_goal or "İlk 5000",
+                weekly_hours=current_user.weekly_hours or "10-20 Saat",
+                focus_time=current_user.focus_time or "Sabah 🌅",
+                available_tasks=template_data
+            )
+            
+            for t in ai_plan:
+                template_id = t.get("template_id")
+                day_offset = t.get("day_offset", 0)
+                day_offset = max(0, min(4, day_offset)) # clamp bounds
+                
+                if template_id:
+                    template = db.query(TaskTemplate).filter(TaskTemplate.id == template_id).first()
+                    if template:
+                        target_date = (start_date + timedelta(days=day_offset)).strftime("%Y-%m-%d")
+                        db_task = Task(
+                            title=f"{template.topic} ({template.level}) [{template.exam_type}]",
+                            status="pending",
+                            priority_score=t.get("priority_score", 1.0),
+                            subject_name=template.subject_name,
+                            estimated_time=template.estimated_time,
+                            actual_time=0,
+                            scheduled_date=target_date,
+                            user_id=current_user.id,
+                            version=1,
+                            is_deleted=False
+                        )
+                        db.add(db_task)
+            db.commit()
+            return
+        except Exception as e:
+            print(f"[Gemini AI Plan Fallback] Hata: {e}")
+            # Fallback to local scheduler
+
+    # Fallback: Local engine
+    import re
+    target_goal_str = current_user.target_goal or ""
+    weak_subjects_found = []
+    all_possible_subjects = ["MATEMATİK", "FİZİK", "KİMYA", "BİYOLOJİ", "TÜRKÇE", "EDEBİYAT", "TARİH", "COĞRAFYA", "FELSEFE", "DİN", "DİL"]
+    for s in all_possible_subjects:
+        if re.search(r'\b' + re.escape(s) + r'\b', target_goal_str.upper()):
+            weak_subjects_found.append(s)
+            
+    strong_neutral_templates = [t for t in filtered_templates if t.subject_name not in weak_subjects_found]
+    weak_templates = [t for t in filtered_templates if t.subject_name in weak_subjects_found]
+    
+    if len(strong_neutral_templates) < 3:
+        strong_neutral_templates = filtered_templates
+        
+    strong_neutral_templates.sort(key=lambda x: 0 if x.level == "Kolay" else 1)
+    selected_strong = random.sample(strong_neutral_templates, min(3, len(strong_neutral_templates))) if strong_neutral_templates else []
+    
+    weak_templates.sort(key=lambda x: 0 if x.level == "Kolay" else 1)
+    selected_weak = random.sample(weak_templates, min(2, len(weak_templates))) if weak_templates else []
+    
+    fallback_tasks_with_offset = []
+    for idx, t in enumerate(selected_strong):
+        day_offset = 0 if idx < 2 else 1
+        fallback_tasks_with_offset.append((t, day_offset))
+        
+    for idx, t in enumerate(selected_weak):
+        day_offset = 2 if idx == 0 else 3
+        fallback_tasks_with_offset.append((t, day_offset))
+        
+    for t, day_offset in fallback_tasks_with_offset:
+        target_date = (start_date + timedelta(days=day_offset)).strftime("%Y-%m-%d")
+        db_task = Task(
+            title=f"{t.topic} ({t.level}) [{t.exam_type}]",
+            status="pending",
+            priority_score=1.0,
+            subject_name=t.subject_name,
+            estimated_time=t.estimated_time,
+            actual_time=0,
+            scheduled_date=target_date,
+            user_id=current_user.id,
+            version=1,
+            is_deleted=False
+        )
+        db.add(db_task)
+    db.commit()
+
+def check_and_generate_next_week(current_user: User, db: Session):
     tasks = db.query(Task).filter(
         Task.user_id == current_user.id,
         Task.is_deleted == False
     ).all()
     
+    # 0 görev varsa (yeni kayıt), bugünden başlayan ilk haftayı oluştur
     if not tasks:
-        # 0 görev varsa yeni plan oluştur
-        from app.core.ai_service import generate_initial_study_plan
-        from app.core.config import GEMINI_API_KEY
-        from app.models.task_template import TaskTemplate
-        
-        # Eğer API Key varsa Gemini ile oluşturmayı dene
-        if GEMINI_API_KEY and GEMINI_API_KEY != "your_gemini_api_key_here":
-            try:
-                available_templates = db.query(TaskTemplate).all()
-                
-                # ALANA GÖRE KESİN FİLTRELEME
-                user_focus = current_user.focus_area or "Sayısal"
-                filtered_templates = [
-                    t for t in available_templates 
-                    if t.allowed_fields and user_focus in t.allowed_fields
-                ]
-                
-                # Eğer nedense boş kalırsa TYT olanları ver
-                if not filtered_templates:
-                    filtered_templates = [t for t in available_templates if t.exam_type == "TYT"]
+        generate_weekly_plan(current_user, db, start_date=datetime.utcnow().date())
+        return
 
-                template_data = [
-                    {
-                        "id": t.id,
-                        "subject": t.subject_name,
-                        "topic": t.topic,
-                        "level": t.level,
-                        "time": t.estimated_time
-                    } for t in filtered_templates
-                ]
+    # Haftanın bitip bitmediğini kontrol et
+    # Koşul 1: Tüm mevcut görevlerin tamamlanmış/atlanmış/başarısız olması (pending veya in_progress kalmaması)
+    # Koşul 2: VEYA tüm görevlerin planlanan tarihlerinin bugünden eski olması
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    all_finished = all(t.status in ["completed", "skipped", "failed"] for t in tasks)
+    
+    max_date_str = max(t.scheduled_date for t in tasks if t.scheduled_date) if tasks else None
+    
+    if all_finished or (max_date_str and max_date_str < today_str):
+        # Yeni hafta başlama tarihi belirle
+        # Eğer son görevin tarihi gelecek/bugün ise, o tarihten 1 gün sonrasından başlat.
+        # Geçmişte kalmışsa doğrudan bugünden başlat.
+        if max_date_str and max_date_str >= today_str:
+            start_date = datetime.strptime(max_date_str, "%Y-%m-%d").date() + timedelta(days=1)
+        else:
+            start_date = datetime.utcnow().date()
+            
+        generate_weekly_plan(current_user, db, start_date=start_date)
 
-                ai_plan = generate_initial_study_plan(
-                    fullName=current_user.fullName or "Öğrenci",
-                    focus_area=current_user.focus_area or "Sayısal",
-                    target_goal=current_user.target_goal or "İlk 5000",
-                    weekly_hours=current_user.weekly_hours or "10-20 Saat",
-                    focus_time=current_user.focus_time or "Sabah 🌅",
-                    available_tasks=template_data
-                )
-                
-                for t in ai_plan:
-                    template_id = t.get("template_id")
-                    day_offset = t.get("day_offset", 0)
-                    
-                    if template_id:
-                        template = db.query(TaskTemplate).filter(TaskTemplate.id == template_id).first()
-                        if template:
-                            target_date = (datetime.utcnow() + timedelta(days=day_offset)).strftime("%Y-%m-%d")
-                            db_task = Task(
-                                title=f"{template.topic} ({template.level})",
-                                status="pending",
-                                priority_score=t.get("priority_score", 1.0),
-                                subject_name=template.subject_name,
-                                estimated_time=template.estimated_time,
-                                actual_time=0,
-                                scheduled_date=target_date,
-                                user_id=current_user.id,
-                                version=1,
-                                is_deleted=False
-                            )
-                            db.add(db_task)
-                db.commit()
-                
-                # Tekrar veritabanından çek
-                return db.query(Task).filter(
-                    Task.user_id == current_user.id,
-                    Task.is_deleted == False
-                ).all()
-            except Exception as e:
-                print(f"[Gemini AI Plan Fallback] Hata: {e}")
-                # Hata durumunda aşağıdaki yerel plan üretimine düşecek
-        
-        # Fallback: Yerel varsayılan ders programını oluştur
-        default_program = [
-            {"subject": "MATEMATİK", "title": "Türev - Limit İlişkisi Soru Çözümü", "time": 90},
-            {"subject": "FİZİK", "title": "Modern Fizik: Fotoelektrik Olayı", "time": 90},
-            {"subject": "TÜRKÇE", "title": "Paragraf Anlam Bilgisi Denemesi", "time": 60},
-            {"subject": "BİYOLOJİ", "title": "Hücresel Solunum Tekrar", "time": 60}
-        ]
-        
-        for t in default_program:
-            db_task = Task(
-                title=t["title"],
-                status="pending",
-                priority_score=1.0,
-                subject_name=t["subject"],
-                estimated_time=t["time"],
-                actual_time=0,
-                user_id=current_user.id,
-                version=1,
-                is_deleted=False
-            )
-            db.add(db_task)
-        db.commit()
-        
-        # Tekrar veritabanından çek
-        tasks = db.query(Task).filter(
-            Task.user_id == current_user.id,
-            Task.is_deleted == False
-        ).all()
-        
-    return tasks
+@router.get("/", response_model=list[TaskResponse])
+def get_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Aktif kullanıcının silinmemiş görevlerini listeler (READ). Boşsa veya hafta bittiyse otomatik olarak yeni plan üretir."""
+    check_and_generate_next_week(current_user, db)
+    
+    return db.query(Task).filter(
+        Task.user_id == current_user.id,
+        Task.is_deleted == False
+    ).all()
 
 @router.post("/", response_model=TaskResponse)
 def create_task(task: TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

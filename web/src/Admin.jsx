@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from './config';
 
 export default function AdminPanel({ onLogout }) {
   const [stats, setStats] = useState({ total_users: 0, total_tasks: 0, completed_tasks: 0 });
@@ -9,8 +10,8 @@ export default function AdminPanel({ onLogout }) {
     const token = localStorage.getItem('token');
     
     Promise.all([
-      fetch('http://127.0.0.1:8000/api/admin/stats', { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json()),
-      fetch('http://127.0.0.1:8000/api/admin/users', { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json())
+      fetch(`${API_BASE_URL}/api/admin/stats`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json()),
+      fetch(`${API_BASE_URL}/api/admin/users`, { headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.json())
     ])
     .then(([statsData, usersData]) => {
       setStats(statsData);
@@ -30,7 +31,7 @@ export default function AdminPanel({ onLogout }) {
   const handleDeleteUser = (userId, userName) => {
     if (window.confirm(`${userName} adlı kullanıcıyı tamamen silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
       const token = localStorage.getItem('token');
-      fetch(`http://127.0.0.1:8000/api/admin/users/${userId}`, {
+      fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -50,7 +51,7 @@ export default function AdminPanel({ onLogout }) {
   if (isLoading) {
     return (
       <div style={styles.container}>
-        <h2 style={{color: '#FFF'}}>Admin Paneli Yükleniyor...</h2>
+        <h2 style={{color: '#1B2A1C'}}>Admin Paneli Yükleniyor...</h2>
       </div>
     );
   }
@@ -126,7 +127,7 @@ export default function AdminPanel({ onLogout }) {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan="6" style={{padding: '24px', textAlign: 'center', color: '#64748B'}}>Henüz sisteme kayıtlı öğrenci yok.</td>
+                  <td colSpan="6" style={{padding: '24px', textAlign: 'center', color: '#6C7E6E'}}>Henüz sisteme kayıtlı öğrenci yok.</td>
                 </tr>
               )}
             </tbody>
@@ -149,27 +150,26 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '40px',
-    background: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
+    background: '#CBE0D1',
     padding: '24px',
     borderRadius: '24px',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
+    border: '1px solid #B2C7B8',
   },
   title: {
     margin: 0,
     fontSize: '28px',
     fontWeight: '800',
-    color: '#FFF',
+    color: '#1B2A1C',
   },
   subtitle: {
     margin: '8px 0 0 0',
-    color: '#E2E8F0',
+    color: '#4A5D4C',
     fontSize: '15px',
   },
   logoutBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-    color: '#FECACA',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
+    backgroundColor: 'rgba(192, 57, 43, 0.05)',
+    color: '#C0392B',
+    border: '1px solid rgba(192, 57, 43, 0.3)',
     padding: '10px 20px',
     borderRadius: '12px',
     fontWeight: '700',
@@ -188,12 +188,12 @@ const styles = {
     borderRadius: '24px',
     display: 'flex',
     alignItems: 'center',
-    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+    border: '1px solid #D5DDD6',
   },
   statIcon: {
     fontSize: '36px',
     marginRight: '20px',
-    background: '#F1F5F9',
+    background: '#F3F6F4',
     width: '64px',
     height: '64px',
     display: 'flex',
@@ -204,24 +204,24 @@ const styles = {
   statValue: {
     fontSize: '28px',
     fontWeight: '900',
-    color: '#0F172A',
+    color: '#1B2A1C',
   },
   statLabel: {
     fontSize: '14px',
-    color: '#64748B',
+    color: '#6C7E6E',
     fontWeight: '600',
   },
   panel: {
     background: '#FFF',
     borderRadius: '24px',
     padding: '32px',
-    boxShadow: '0 15px 35px rgba(0,0,0,0.1)',
+    border: '1px solid #D5DDD6',
   },
   panelTitle: {
     margin: '0 0 24px 0',
     fontSize: '20px',
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   tableContainer: {
     overflowX: 'auto',
@@ -231,27 +231,27 @@ const styles = {
     borderCollapse: 'collapse',
   },
   trHead: {
-    borderBottom: '2px solid #E2E8F0',
+    borderBottom: '2px solid #EBF0EC',
   },
   th: {
     textAlign: 'left',
     padding: '16px',
-    color: '#64748B',
+    color: '#6C7E6E',
     fontWeight: '700',
     fontSize: '14px',
     textTransform: 'uppercase',
   },
   tr: {
-    borderBottom: '1px solid #F1F5F9',
+    borderBottom: '1px solid #EBF0EC',
   },
   td: {
     padding: '16px',
-    color: '#334155',
+    color: '#1B2A1C',
     fontSize: '15px',
   },
   badge: {
-    background: '#E0F2FE',
-    color: '#0284C7',
+    background: '#EBF5FB',
+    color: '#3498DB',
     padding: '4px 10px',
     borderRadius: '12px',
     fontSize: '12px',

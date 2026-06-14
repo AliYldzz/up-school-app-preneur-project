@@ -15,8 +15,8 @@ export default function Profile({ onSettings, profilePic, userName, userTarget, 
   const performanceStats = [
     { label: 'Çözülen Soru', value: userStats?.total_solved?.toLocaleString() || '0', color: '#3498DB' },
     { label: 'Doğruluk Oranı', value: `${userStats?.accuracy_rate || 0}%`, color: '#2ECC71' },
-    { label: 'Doğru / Yanlış', value: `${userStats?.total_correct || 0} / ${userStats?.total_wrong || 0}`, color: '#F59E0B' },
-    { label: 'Toplam Saat', value: userStats?.total_hours || '0', color: '#8B5CF6' },
+    { label: 'Doğru / Yanlış', value: `${userStats?.total_correct || 0} / ${userStats?.total_wrong || 0}`, color: '#FF9875' },
+    { label: 'Toplam Saat', value: userStats?.total_hours || '0', color: '#717970' },
   ];
 
   // Son 7 günün etiketleri (Bugünden geriye doğru)
@@ -179,7 +179,7 @@ export default function Profile({ onSettings, profilePic, userName, userTarget, 
                   />
                   <span style={{
                     ...styles.dayLabel,
-                    color: isToday ? '#16A34A' : '#94A3B8',
+                    color: isToday ? '#005D32' : '#6C7E6E',
                     fontWeight: isToday ? '700' : '500',
                   }}>{dayLabels[i]}</span>
                 </div>
@@ -189,13 +189,13 @@ export default function Profile({ onSettings, profilePic, userName, userTarget, 
         </div>
 
         {/* Subject Success Card */}
-        <div style={{...styles.card, backgroundColor: '#F0FDF4'}}>
+        <div style={{...styles.card, backgroundColor: '#EBF5EC'}}>
           <h3 style={{...styles.cardTitle, marginBottom: '20px'}}>Ders Bazlı Başarı</h3>
           
           {[
-            { name: 'Matematik', percent: 92, color: '#3B82F6' },
-            { name: 'Fizik', percent: 78, color: '#3B82F6' },
-            { name: 'Kimya', percent: 65, color: '#3B82F6' }
+            { name: 'Matematik', percent: 92, color: '#3498DB' },
+            { name: 'Fizik', percent: 78, color: '#FF9875' },
+            { name: 'Kimya', percent: 65, color: '#717970' }
           ].map((item, i) => (
             <div key={i} style={styles.subjectRow}>
               <div style={styles.subjectMeta}>
@@ -216,8 +216,6 @@ export default function Profile({ onSettings, profilePic, userName, userTarget, 
 const styles = {
   container: {
     width: '100%',
-    maxWidth: '440px',
-    margin: '0 auto',
     paddingBottom: '100px',
   },
   header: {
@@ -227,7 +225,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    color: '#64748B',
+    color: '#4A5D4C',
     fontSize: '18px',
     fontWeight: '600',
   },
@@ -241,8 +239,8 @@ const styles = {
     backgroundColor: '#FFFFFF',
     borderRadius: '24px',
     padding: '24px',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
-    border: '1px solid #E2E8F0',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)',
+    border: '1px solid #D5DDD6',
   },
   userSection: {
     display: 'flex',
@@ -269,7 +267,7 @@ const styles = {
     width: '100%',
     height: '100%',
     borderRadius: '50%',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F3F6F4',
   },
   userInfo: {
     flex: 1,
@@ -277,12 +275,12 @@ const styles = {
   userName: {
     fontSize: '22px',
     fontWeight: '800',
-    color: '#243B55',
+    color: '#1B2A1C',
     margin: '0 0 4px 0',
   },
   userSubtitle: {
     fontSize: '14px',
-    color: '#64748B',
+    color: '#4A5D4C',
     margin: 0,
     lineHeight: '1.4',
   },
@@ -292,7 +290,7 @@ const styles = {
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#065F46', // Koyu yeşil (görseldeki gibi)
+    backgroundColor: '#005D32',
     color: '#FFFFFF',
     border: 'none',
     borderRadius: '12px',
@@ -304,8 +302,8 @@ const styles = {
   secondaryButton: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    color: '#243B55',
-    border: '1px solid #E2E8F0',
+    color: '#1B2A1C',
+    border: '1px solid #D5DDD6',
     borderRadius: '12px',
     padding: '12px',
     fontSize: '14px',
@@ -321,12 +319,12 @@ const styles = {
   cardTitle: {
     fontSize: '18px',
     fontWeight: '800',
-    color: '#243B55',
+    color: '#1B2A1C',
     margin: 0,
   },
   badge: {
-    backgroundColor: '#DBEAFE',
-    color: '#1D4ED8',
+    backgroundColor: '#EBF5FB',
+    color: '#3498DB',
     padding: '4px 12px',
     borderRadius: '20px',
     fontSize: '12px',
@@ -353,7 +351,7 @@ const styles = {
   statLabel: {
     fontSize: '12px',
     fontWeight: '600',
-    color: '#94A3B8',
+    color: '#6C7E6E',
   },
   chartContainer: {
     height: '110px',
@@ -399,16 +397,16 @@ const styles = {
   subjectName: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#475569',
+    color: '#4A5D4C',
   },
   subjectPercent: {
     fontSize: '14px',
     fontWeight: '700',
-    color: '#3B82F6',
+    color: '#3498DB',
   },
   progressTrack: {
     height: '8px',
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#EBF0EC',
     borderRadius: '4px',
     overflow: 'hidden',
   },
@@ -425,7 +423,7 @@ const styles = {
   editFormTitle: {
     fontSize: '16px',
     fontWeight: '800',
-    color: '#243B55',
+    color: '#1B2A1C',
     margin: '0 0 4px 0',
   },
   formGroup: {
@@ -436,29 +434,30 @@ const styles = {
   formLabel: {
     fontSize: '12px',
     fontWeight: '700',
-    color: '#64748B',
+    color: '#6C7E6E',
   },
   formInput: {
     padding: '10px 12px',
     borderRadius: '10px',
-    border: '1px solid #CBD5E1',
+    border: '1px solid #D5DDD6',
     fontSize: '14px',
-    color: '#1E293B',
+    color: '#1B2A1C',
     outline: 'none',
     width: '100%',
     fontFamily: 'inherit',
     boxSizing: 'border-box',
+    backgroundColor: '#F3F6F4',
   },
   formSelect: {
     padding: '10px 12px',
     borderRadius: '10px',
-    border: '1px solid #CBD5E1',
+    border: '1px solid #D5DDD6',
     fontSize: '14px',
-    color: '#1E293B',
+    color: '#1B2A1C',
     outline: 'none',
     width: '100%',
     fontFamily: 'inherit',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F6F4',
     boxSizing: 'border-box',
   },
   editActionRow: {
@@ -468,7 +467,7 @@ const styles = {
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#10B981',
+    backgroundColor: '#005D32',
     color: '#FFFFFF',
     border: 'none',
     borderRadius: '10px',
@@ -479,9 +478,9 @@ const styles = {
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
-    color: '#475569',
-    border: '1px solid #E2E8F0',
+    backgroundColor: '#FFFFFF',
+    color: '#6C7E6E',
+    border: '1px solid #D5DDD6',
     borderRadius: '10px',
     padding: '10px',
     fontSize: '14px',

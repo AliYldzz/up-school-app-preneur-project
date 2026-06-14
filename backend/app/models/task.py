@@ -15,6 +15,8 @@ class Task(Base):
     subject_name = Column(String, index=True, nullable=True) # Matematik, Fizik vb.
     estimated_time = Column(Integer, default=30) # Tahmini süre (dakika)
     actual_time = Column(Integer, default=0) # Harcanan gerçek süre (dakika)
+    scheduled_date = Column(String, index=True, nullable=True) # Planlanan gün
+
     
     # Offline-first & Sync Alanları
     version = Column(Integer, default=1) # Senkronizasyon çakışma çözümü için

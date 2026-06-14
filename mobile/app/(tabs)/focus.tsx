@@ -14,6 +14,10 @@ interface Task {
   status: string;
 }
 
+const cleanTitle = (title: string) => {
+  return title ? title.replace(/\s*\((Kolay|Orta|Zor)\)/g, '') : '';
+};
+
 export default function FocusScreen() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -143,7 +147,7 @@ export default function FocusScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.timerHeader}>
           <TouchableOpacity onPress={() => setSelectedTask(null)} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={24} color="#64748B" />
+            <Ionicons name="arrow-back" size={24} color="#1B2A1C" />
           </TouchableOpacity>
           <Text style={styles.timerHeaderTitle}>Odak Modu</Text>
           <View style={{ width: 24 }} />
@@ -152,7 +156,7 @@ export default function FocusScreen() {
         <View style={styles.timerContent}>
           <View style={styles.taskCard}>
             <Text style={styles.taskSubject}>{selectedTask.subject_name}</Text>
-            <Text style={styles.taskTitle}>{selectedTask.title}</Text>
+            <Text style={styles.taskTitle}>{cleanTitle(selectedTask.title)}</Text>
           </View>
 
           <View style={styles.circleContainer}>
@@ -167,8 +171,8 @@ export default function FocusScreen() {
                 <Ionicons name={isActive ? "pause" : "play"} size={32} color="#FFFFFF" />
               </TouchableOpacity>
               
-              <TouchableOpacity style={[styles.controlBtn, { backgroundColor: '#F1F5F9' }]} onPress={() => setTimeLeft(0)}>
-                <Ionicons name="stop" size={24} color="#64748B" />
+              <TouchableOpacity style={[styles.controlBtn, { backgroundColor: '#F3F6F4', borderWidth: 1, borderColor: '#D5DDD6' }]} onPress={() => setTimeLeft(0)}>
+                <Ionicons name="stop" size={24} color="#1B2A1C" />
               </TouchableOpacity>
             </View>
           ) : (
@@ -212,10 +216,10 @@ export default function FocusScreen() {
             <TouchableOpacity key={task.id} style={styles.taskItem} onPress={() => startTask(task)}>
               <View style={styles.taskInfo}>
                 <Text style={styles.taskBadge}>{task.subject_name}</Text>
-                <Text style={styles.taskName}>{task.title}</Text>
+                <Text style={styles.taskName}>{cleanTitle(task.title)}</Text>
               </View>
               <View style={styles.taskTime}>
-                <Ionicons name="time-outline" size={16} color="#94A3B8" />
+                <Ionicons name="time-outline" size={16} color="#6C7E6E" />
                 <Text style={styles.taskTimeText}>{task.estimated_time} dk</Text>
               </View>
             </TouchableOpacity>
@@ -229,18 +233,18 @@ export default function FocusScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EBF0EC',
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     paddingHorizontal: 20,
     marginTop: 20,
   },
   subtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#6C7E6E',
     paddingHorizontal: 20,
     marginTop: 8,
     marginBottom: 20,
@@ -257,13 +261,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#000',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.01,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: '#D5DDD6',
   },
   taskInfo: {
     flex: 1,
@@ -271,8 +275,8 @@ const styles = StyleSheet.create({
   taskBadge: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#3B82F6',
-    backgroundColor: '#EFF6FF',
+    color: '#005D32',
+    backgroundColor: '#EBF5EC',
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -282,13 +286,13 @@ const styles = StyleSheet.create({
   taskName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#334155',
+    color: '#1B2A1C',
   },
   taskTime: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F3F6F4',
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
@@ -296,7 +300,7 @@ const styles = StyleSheet.create({
   taskTimeText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#6C7E6E',
   },
   emptyState: {
     alignItems: 'center',
@@ -305,7 +309,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#94A3B8',
+    color: '#6C7E6E',
     fontWeight: '500',
   },
   timerHeader: {
@@ -319,16 +323,18 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.01,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 1,
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
   },
   timerHeaderTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   timerContent: {
     flex: 1,
@@ -342,16 +348,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     width: '100%',
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.01,
     shadowRadius: 10,
-    elevation: 3,
+    elevation: 1,
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
   },
   taskSubject: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#3B82F6',
+    color: '#005D32',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 8,
@@ -359,7 +367,7 @@ const styles = StyleSheet.create({
   taskTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#1B2A1C',
     textAlign: 'center',
   },
   circleContainer: {
@@ -370,26 +378,26 @@ const styles = StyleSheet.create({
     height: 250,
     borderRadius: 125,
     borderWidth: 8,
-    borderColor: '#E2E8F0',
+    borderColor: '#D5DDD6',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    shadowColor: '#3B82F6',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.01,
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 2,
   },
   timerCircleActive: {
-    borderColor: '#3B82F6',
+    borderColor: '#005D32',
   },
   timerCircleDone: {
-    borderColor: '#10B981',
+    borderColor: '#2ECC71',
   },
   timeText: {
     fontSize: 64,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     fontVariant: ['tabular-nums'],
   },
   controlsRow: {
@@ -401,12 +409,12 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#005D32',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#3B82F6',
+    shadowColor: '#005D32',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 8,
   },
@@ -417,20 +425,20 @@ const styles = StyleSheet.create({
   finishedText: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#10B981',
+    color: '#005D32',
     marginBottom: 24,
   },
   primaryBtn: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#005D32',
     width: '100%',
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
-    shadowColor: '#10B981',
+    shadowColor: '#005D32',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   primaryBtnText: {
     color: '#FFFFFF',
@@ -439,7 +447,7 @@ const styles = StyleSheet.create({
   },
   orText: {
     marginVertical: 16,
-    color: '#94A3B8',
+    color: '#6C7E6E',
     fontWeight: '600',
   },
   extendRow: {
@@ -454,10 +462,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#D5DDD6',
   },
   secondaryBtnText: {
-    color: '#475569',
+    color: '#1B2A1C',
     fontSize: 14,
     fontWeight: '700',
   },

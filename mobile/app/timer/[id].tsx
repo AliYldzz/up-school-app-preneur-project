@@ -166,7 +166,7 @@ export default function TimerScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <MaterialCommunityIcons name="fire" size={24} color="#2ECC71" />
+        <MaterialCommunityIcons name="fire" size={24} color="#005D32" />
         <Text style={styles.headerTitle}>Odak Modu</Text>
       </View>
 
@@ -202,12 +202,12 @@ export default function TimerScreen() {
           {/* Secondary Controls */}
           <View style={styles.secondaryRow}>
             <TouchableOpacity style={styles.secondaryButton} onPress={toggleTimer} activeOpacity={0.7}>
-              <Ionicons name={isRunning ? "pause" : "play"} size={20} color="#243B55" />
+              <Ionicons name={isRunning ? "pause" : "play"} size={20} color="#1B2A1C" />
               <Text style={styles.secondaryButtonText}>{isRunning ? "Durdur" : "Başlat"}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.secondaryButton} onPress={handleExtend} activeOpacity={0.7}>
-              <Ionicons name="time-outline" size={20} color="#243B55" />
+              <Ionicons name="time-outline" size={20} color="#1B2A1C" />
               <Text style={styles.secondaryButtonText}>Uzat</Text>
             </TouchableOpacity>
           </View>
@@ -221,7 +221,7 @@ export default function TimerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F7F9',
+    backgroundColor: '#EBF0EC',
   },
   header: {
     flexDirection: 'row',
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   content: {
     flex: 1,
@@ -248,14 +248,14 @@ const styles = StyleSheet.create({
   subjectTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#0284C7',
+    color: '#005D32',
     marginBottom: 8,
     letterSpacing: 1,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 14,
-    color: '#475569',
+    color: '#6C7E6E',
     textAlign: 'center',
   },
   timerWrapper: {
@@ -270,35 +270,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 12,
-    borderColor: '#3498DB',
-    borderLeftColor: '#E2E8F0', // Simulated progress
-    borderBottomColor: '#E2E8F0',
+    borderColor: '#005D32',
+    borderLeftColor: '#D5DDD6',
+    borderBottomColor: '#D5DDD6',
   },
   circleInner: {
     width: 256,
     height: 256,
     borderRadius: 128,
-    backgroundColor: '#F4F7F9',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   timeText: {
     fontSize: 72,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#1B2A1C',
     fontVariant: ['tabular-nums'],
     letterSpacing: -2,
   },
   statusText: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#38BDF8',
+    color: '#005D32',
     marginTop: 4,
   },
   quoteBox: {
-    backgroundColor: '#FAFAFA',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#D5DDD6',
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     fontStyle: 'italic',
-    color: '#475569',
+    color: '#4A5D4C',
     textAlign: 'center',
     fontSize: 14,
     lineHeight: 20,
@@ -318,18 +318,18 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   completeButton: {
-    backgroundColor: '#2ECC71',
+    backgroundColor: '#005D32',
     borderRadius: 16,
     paddingVertical: 18,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    shadowColor: '#2ECC71',
+    shadowColor: '#005D32',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   completeButtonText: {
     color: '#FFFFFF',
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#D5DDD6',
     borderRadius: 16,
     paddingVertical: 16,
     flexDirection: 'row',
@@ -353,13 +353,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   secondaryButtonText: {
-    color: '#1E293B',
+    color: '#1B2A1C',
     fontSize: 16,
     fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backgroundColor: 'rgba(27, 42, 28, 0.65)',
     justifyContent: 'flex-end',
   },
   modalContent: {
@@ -368,22 +368,24 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 32,
     padding: 24,
     paddingBottom: 40,
-    shadowColor: '#000',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 10,
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     marginBottom: 8,
     textAlign: 'center',
   },
   modalSubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#6C7E6E',
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -393,22 +395,22 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#475569',
+    color: '#4A5D4C',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F3F6F4',
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#D5DDD6',
     borderRadius: 12,
     padding: 16,
     fontSize: 18,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#1B2A1C',
     textAlign: 'center',
   },
   submitModalButton: {
-    backgroundColor: '#2ECC71',
+    backgroundColor: '#005D32',
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: 'center',

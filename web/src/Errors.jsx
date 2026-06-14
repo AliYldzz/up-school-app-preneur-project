@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from './config';
 
 // Varsayılan mock SVG soruları (yüksek kaliteli ve gerçekçi çizimler)
 const MATH_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200" viewBox="0 0 300 200" fill="none">
@@ -66,7 +67,7 @@ const INITIAL_ERRORS = [
     difficulty: 'Zor',
     status: 'solved',
     image: CHEMISTRY_SVG,
-    color: '#10B981',
+    color: '#005D32',
     bgColor: '#ECFDF5',
     date: '5 gün önce'
   }
@@ -92,7 +93,7 @@ export default function Errors({ onBack }) {
   const subjectsConfig = {
     'MATEMATİK': { color: '#3B82F6', bgColor: '#EFF6FF' },
     'FİZİK': { color: '#EF4444', bgColor: '#FEF2F2' },
-    'KİMYA': { color: '#10B981', bgColor: '#ECFDF5' },
+    'KİMYA': { color: '#005D32', bgColor: '#ECFDF5' },
     'BİYOLOJİ': { color: '#F97316', bgColor: '#FFF7ED' },
     'TÜRKÇE': { color: '#8B5CF6', bgColor: '#F5F3FF' }
   };
@@ -102,7 +103,7 @@ export default function Errors({ onBack }) {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    fetch('http://127.0.0.1:8000/api/errors/', {
+    fetch(`${API_BASE_URL}/api/errors/`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -194,7 +195,7 @@ export default function Errors({ onBack }) {
       image_data: uploadedImage || MATH_SVG // base64 görsel verisi veya varsayılan
     };
 
-    fetch('http://127.0.0.1:8000/api/errors/', {
+    fetch(`${API_BASE_URL}/api/errors/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -249,7 +250,7 @@ export default function Errors({ onBack }) {
     if (!token) return;
 
     // Çözülen soruyu listeden kaldırıyoruz (backend'den siliyoruz)
-    fetch(`http://127.0.0.1:8000/api/errors/${id}`, {
+    fetch(`${API_BASE_URL}/api/errors/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -283,7 +284,7 @@ export default function Errors({ onBack }) {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      fetch(`http://127.0.0.1:8000/api/errors/${id}`, {
+      fetch(`${API_BASE_URL}/api/errors/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -342,9 +343,9 @@ export default function Errors({ onBack }) {
                       onClick={() => setSubject(subj)}
                       style={{
                         ...styles.subjectTabBtn,
-                        borderColor: subject === subj ? subjectsConfig[subj].color : '#E2E8F0',
+                        borderColor: subject === subj ? subjectsConfig[subj].color : '#D5DDD6',
                         backgroundColor: subject === subj ? subjectsConfig[subj].bgColor : '#FFFFFF',
-                        color: subject === subj ? subjectsConfig[subj].color : '#64748B',
+                        color: subject === subj ? subjectsConfig[subj].color : '#6C7E6E',
                       }}
                     >
                       {subj}
@@ -375,9 +376,9 @@ export default function Errors({ onBack }) {
                       onClick={() => setDifficulty(diff)}
                       style={{
                         ...styles.diffBtn,
-                        backgroundColor: difficulty === diff ? '#E0F2FE' : '#FFFFFF',
-                        borderColor: difficulty === diff ? '#0284C7' : '#E2E8F0',
-                        color: difficulty === diff ? '#0369A1' : '#64748B'
+                        backgroundColor: difficulty === diff ? '#EBF5FB' : '#FFFFFF',
+                        borderColor: difficulty === diff ? '#3498DB' : '#D5DDD6',
+                        color: difficulty === diff ? '#2980B9' : '#6C7E6E'
                       }}
                     >
                       {diff}
@@ -402,11 +403,11 @@ export default function Errors({ onBack }) {
                     </div>
                   ) : (
                     <label style={styles.uploadLabel}>
-                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6C7E6E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
                         <circle cx="12" cy="13" r="4"></circle>
                       </svg>
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#E2E8F0' }}>Soru Fotoğrafı Çek / Seç</span>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: '#6C7E6E' }}>Soru Fotoğrafı Çek / Seç</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -437,7 +438,7 @@ export default function Errors({ onBack }) {
             <span style={styles.statText}>Çözülecek Hata</span>
           </div>
           <div style={styles.kumbaraStats}>
-            <span style={{ ...styles.statNumber, color: '#10B981' }}>{solvedCount}</span>
+            <span style={{ ...styles.statNumber, color: '#2ECC71' }}>{solvedCount}</span>
             <span style={styles.statText}>Öğrenilen Hata</span>
           </div>
         </div>
@@ -451,8 +452,8 @@ export default function Errors({ onBack }) {
                 onClick={() => setFilterSubject(subj)}
                 style={{
                   ...styles.filterChip,
-                  backgroundColor: filterSubject === subj ? '#1E293B' : '#FFFFFF',
-                  color: filterSubject === subj ? '#FFFFFF' : '#64748B',
+                  backgroundColor: filterSubject === subj ? '#1B2A1C' : '#FFFFFF',
+                  color: filterSubject === subj ? '#FFFFFF' : '#6C7E6E',
                 }}
               >
                 {subj}
@@ -465,8 +466,8 @@ export default function Errors({ onBack }) {
         {filteredList.length === 0 ? (
           <div style={styles.emptyState}>
             <span style={{ fontSize: '48px' }}>🎉</span>
-            <h4 style={{ color: '#FFFFFF', fontWeight: '700', margin: '12px 0 4px' }}>Temiz Kumbara!</h4>
-            <p style={{ color: '#E2E8F0', fontSize: '13px', margin: 0 }}>Burada görüntülenecek hiç yanlış soru yok.</p>
+            <h4 style={{ color: '#1B2A1C', fontWeight: '700', margin: '12px 0 4px' }}>Temiz Kumbara!</h4>
+            <p style={{ color: '#4A5D4C', fontSize: '13px', margin: 0 }}>Burada görüntülenecek hiç yanlış soru yok.</p>
           </div>
         ) : (
           <div style={styles.errorsGrid}>
@@ -475,7 +476,7 @@ export default function Errors({ onBack }) {
                 key={item.id} 
                 style={{
                   ...styles.errorCard,
-                  borderColor: selectedError?.id === item.id ? item.color : (item.status === 'solved' ? '#10B981' : '#E2E8F0')
+                  borderColor: selectedError?.id === item.id ? item.color : (item.status === 'solved' ? '#2ECC71' : '#D5DDD6')
                 }}
                 onClick={() => setSelectedError(item)}
               >
@@ -545,7 +546,7 @@ export default function Errors({ onBack }) {
               <div style={styles.modalFooterRow}>
                 <span style={{
                   ...styles.diffLabel,
-                  color: selectedError.difficulty === 'Zor' ? '#EF4444' : selectedError.difficulty === 'Orta' ? '#F59E0B' : '#10B981'
+                  color: selectedError.difficulty === 'Zor' ? '#EF4444' : selectedError.difficulty === 'Orta' ? '#F59E0B' : '#005D32'
                 }}>
                   Zorluk: {selectedError.difficulty}
                 </span>
@@ -557,7 +558,7 @@ export default function Errors({ onBack }) {
                     }} 
                     style={{
                       ...styles.modalActionBtn,
-                      backgroundColor: '#10B981',
+                      backgroundColor: '#005D32',
                       color: '#FFFFFF',
                     }}
                   >
@@ -588,8 +589,6 @@ const styles = {
     background: 'transparent',
     minHeight: '100vh',
     width: '100%',
-    maxWidth: '440px',
-    margin: '0 auto',
     paddingBottom: '100px',
     fontFamily: "'Inter', sans-serif",
   },
@@ -599,26 +598,25 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: 'transparent',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    borderBottom: '1px solid #D5DDD6',
   },
   backButton: {
-    background: 'rgba(255,255,255,0.1)',
-    borderRadius: '50%',
+    background: 'none',
     padding: '8px',
     display: 'flex',
     alignItems: 'center',
     cursor: 'pointer',
     border: 'none',
-    color: '#FFF'
+    color: '#1B2A1C'
   },
   headerTitle: {
     fontSize: '18px',
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1B2A1C',
     margin: 0,
   },
   addButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#3498DB',
     color: '#FFFFFF',
     border: 'none',
     borderRadius: '10px',
@@ -636,11 +634,10 @@ const styles = {
   kumbaraInfo: {
     display: 'flex',
     gap: '16px',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#FFFFFF',
     borderRadius: '20px',
     padding: '16px',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
+    border: '1px solid #D5DDD6',
   },
   kumbaraStats: {
     flex: 1,
@@ -652,28 +649,28 @@ const styles = {
   statNumber: {
     fontSize: '24px',
     fontWeight: '900',
-    color: '#FFFFFF',
+    color: '#1B2A1C',
   },
   statText: {
     fontSize: '11px',
-    color: '#CBD5E1',
+    color: '#4A5D4C',
     fontWeight: '700',
     textTransform: 'uppercase',
   },
   formCard: {
     borderRadius: '20px',
     padding: '20px',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    backdropFilter: 'blur(10px)',
+    border: '1px solid #D5DDD6',
+    backgroundColor: '#FFFFFF',
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
+    boxShadow: '0 8px 16px rgba(46, 58, 47, 0.02)',
   },
   formTitle: {
     fontSize: '16px',
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1B2A1C',
     margin: 0,
   },
   form: {
@@ -689,15 +686,15 @@ const styles = {
   label: {
     fontSize: '13px',
     fontWeight: '700',
-    color: '#E2E8F0',
+    color: '#4A5D4C',
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#F3F6F4',
+    border: '1px solid #D5DDD6',
     borderRadius: '12px',
     padding: '12px 16px',
     fontSize: '14px',
-    color: '#FFFFFF',
+    color: '#1B2A1C',
     outline: 'none',
   },
   subjectTabs: {
@@ -727,9 +724,9 @@ const styles = {
     cursor: 'pointer',
   },
   uploadArea: {
-    border: '2px dashed rgba(255, 255, 255, 0.3)',
+    border: '2px dashed #D5DDD6',
     borderRadius: '16px',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#F3F6F4',
     padding: '16px',
     display: 'flex',
     alignItems: 'center',
@@ -758,16 +755,16 @@ const styles = {
     borderRadius: '12px',
   },
   removePreviewBtn: {
-    backgroundColor: '#F1F5F9',
-    color: '#64748B',
-    border: '1px solid #CBD5E1',
+    backgroundColor: '#FFFFFF',
+    color: '#6C7E6E',
+    border: '1px solid #D5DDD6',
     borderRadius: '8px',
     padding: '4px 12px',
     fontSize: '11px',
     fontWeight: '700',
   },
   submitBtn: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#005D32',
     color: '#FFFFFF',
     border: 'none',
     borderRadius: '16px',
@@ -776,7 +773,7 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer',
     marginTop: '8px',
-    boxShadow: '0 4px 10px rgba(16, 185, 129, 0.2)',
+    boxShadow: '0 4px 10px rgba(0, 93, 50, 0.15)',
   },
   filterSection: {
     display: 'flex',
@@ -790,18 +787,18 @@ const styles = {
     paddingBottom: '4px',
   },
   filterChip: {
-    border: 'none',
+    border: '1px solid #D5DDD6',
     borderRadius: '12px',
     padding: '8px 14px',
     fontSize: '11px',
     fontWeight: '800',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.01)',
   },
   statusFilterBar: {
     display: 'flex',
-    borderBottom: '1px solid #E2E8F0',
+    borderBottom: '1px solid #D5DDD6',
   },
   statusBtn: {
     flex: 1,
@@ -823,9 +820,9 @@ const styles = {
     aspectRatio: '1 / 1',
     backgroundColor: '#FFFFFF',
     borderRadius: '16px',
-    border: '2px solid #E2E8F0',
+    border: '2px solid #D5DDD6',
     overflow: 'hidden',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.02)',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.01)',
     cursor: 'pointer',
     transition: 'transform 0.2s, border-color 0.2s',
   },
@@ -842,7 +839,7 @@ const styles = {
     height: '8px',
     borderRadius: '50%',
     border: '1px solid #FFFFFF',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   },
   solvedToggleButton: {
     position: 'absolute',
@@ -858,7 +855,7 @@ const styles = {
     fontSize: '13px',
     fontWeight: '900',
     cursor: 'pointer',
-    boxShadow: '0 2px 5px rgba(0,0,0,0.15)',
+    boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
     transition: 'all 0.15s ease',
     padding: 0,
     outline: 'none',
@@ -883,7 +880,7 @@ const styles = {
   placeholderTopicText: {
     fontSize: '10px',
     fontWeight: '700',
-    color: '#334155',
+    color: '#1B2A1C',
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
@@ -911,13 +908,13 @@ const styles = {
     fontWeight: '700',
   },
   modalImageContainer: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F3F6F4',
     borderRadius: '16px',
     padding: '16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '1px solid #E2E8F0',
+    border: '1px solid #D5DDD6',
   },
   modalDetails: {
     marginTop: '16px',
@@ -933,12 +930,12 @@ const styles = {
   modalTopic: {
     fontSize: '18px',
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     margin: 0,
   },
   modalDate: {
     fontSize: '12px',
-    color: '#94A3B8',
+    color: '#6C7E6E',
     fontWeight: '500',
   },
   modalFooterRow: {
@@ -971,7 +968,7 @@ const styles = {
     textAlign: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: '24px',
-    border: '1px dashed #CBD5E1',
+    border: '1px dashed #D5DDD6',
   },
   modalOverlay: {
     position: 'fixed',
@@ -979,7 +976,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    backgroundColor: 'rgba(27, 42, 28, 0.75)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -995,7 +992,7 @@ const styles = {
     backgroundColor: '#FFFFFF',
     borderRadius: '28px',
     padding: '20px',
-    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.1) inset',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)',
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
@@ -1007,12 +1004,12 @@ const styles = {
     width: '32px',
     height: '32px',
     borderRadius: '16px',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F3F6F4',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     border: 'none',
-    color: '#64748B',
+    color: '#6C7E6E',
     fontSize: '16px',
     fontWeight: 'bold',
     cursor: 'pointer',
@@ -1025,15 +1022,15 @@ const styles = {
     maxHeight: '220px',
     objectFit: 'contain',
     borderRadius: '16px',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F3F6F4',
   },
   solutionBoxPremium: {
-    background: 'linear-gradient(145deg, #F0F9FF 0%, #E0F2FE 100%)',
-    border: '1px solid #BAE6FD',
+    background: 'linear-gradient(145deg, #EBF5FB 0%, #D4E6F1 100%)',
+    border: '1px solid #AED6F1',
     borderRadius: '20px',
     padding: '16px',
     marginTop: '16px',
-    boxShadow: '0 4px 15px -3px rgba(2, 132, 199, 0.1)',
+    boxShadow: '0 4px 15px -3px rgba(52, 152, 219, 0.08)',
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
@@ -1044,7 +1041,7 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     paddingBottom: '12px',
-    borderBottom: '1px solid rgba(2, 132, 199, 0.15)',
+    borderBottom: '1px solid rgba(52, 152, 219, 0.15)',
   },
   aiSparkleIcon: {
     fontSize: '18px',
@@ -1053,7 +1050,7 @@ const styles = {
   solutionTitlePremium: {
     fontSize: '15px',
     fontWeight: '800',
-    color: '#0369A1',
+    color: '#3498DB',
     margin: 0,
     letterSpacing: '-0.3px',
   },
@@ -1063,7 +1060,7 @@ const styles = {
   },
   solutionContentPremium: {
     fontSize: '14px',
-    color: '#334155',
+    color: '#1B2A1C',
     lineHeight: '1.7',
     margin: 0,
     whiteSpace: 'pre-wrap',

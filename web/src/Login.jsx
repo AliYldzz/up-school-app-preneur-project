@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from './config';
 
 export default function Login({ onLoginSuccess, onRegisterClick }) {
   const [email, setEmail] = useState('');
@@ -17,7 +18,7 @@ export default function Login({ onLoginSuccess, onRegisterClick }) {
 
     setIsLoading(true);
 
-    fetch('http://127.0.0.1:8000/api/auth/login', {
+    fetch(`${API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -52,7 +53,7 @@ export default function Login({ onLoginSuccess, onRegisterClick }) {
         <p style={styles.subtitle}>Başarıya giden yolda ilk adımını at</p>
       </div>
 
-      <div className="glass-panel" style={styles.formContainer}>
+      <div style={styles.formContainer}>
         {error && (
           <div style={styles.errorContainer}>
             <span style={styles.errorText}>⚠️ {error}</span>
@@ -155,12 +156,13 @@ const styles = {
     width: '80px',
     height: '80px',
     borderRadius: '24px',
-    backgroundColor: 'rgba(52, 152, 219, 0.1)', // Vurgu rengi şeffaf
+    backgroundColor: '#FFFFFF', 
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: '20px',
-    border: '1px solid rgba(52, 152, 219, 0.3)',
+    border: '2px solid #005D32',
+    boxShadow: '0 8px 24px rgba(0, 93, 50, 0.08)',
   },
   logoIcon: {
     fontSize: '40px',
@@ -168,18 +170,23 @@ const styles = {
   title: {
     fontSize: '28px',
     fontWeight: '800',
-    color: '#FFFFFF', 
+    color: '#1B2A1C', 
     marginBottom: '8px',
     textAlign: 'center',
   },
   subtitle: {
     fontSize: '15px',
-    color: '#A7F3D0',
+    color: '#005D32',
     textAlign: 'center',
+    fontWeight: '600',
   },
   formContainer: {
     width: '100%',
     padding: '32px',
+    backgroundColor: '#FFFFFF', 
+    borderRadius: '28px',
+    border: '1px solid #D5DDD6',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.03)',
   },
   form: {
     display: 'flex',
@@ -203,7 +210,7 @@ const styles = {
     flexDirection: 'column',
   },
   label: {
-    color: '#243B55', // Ana renk
+    color: '#4A5D4C',
     fontSize: '14px',
     fontWeight: '600',
     marginBottom: '8px',
@@ -212,9 +219,9 @@ const styles = {
   inputWrapper: {
     display: 'flex',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.5)', 
+    backgroundColor: '#F3F6F4', 
     borderRadius: '16px',
-    border: '1px solid #CBD5E1',
+    border: '1px solid #D5DDD6',
     padding: '0 16px',
     height: '56px',
     transition: 'border-color 0.2s',
@@ -227,7 +234,7 @@ const styles = {
     flex: 1,
     backgroundColor: 'transparent',
     border: 'none',
-    color: '#243B55', // Ana renk
+    color: '#1B2A1C',
     fontSize: '16px',
     height: '100%',
     outline: 'none',
@@ -240,7 +247,7 @@ const styles = {
   registerLink: {
     background: 'transparent',
     border: 'none',
-    color: '#2ECC71', // Yeşil vurgu
+    color: '#005D32',
     fontSize: '13px',
     fontWeight: '600',
     padding: '4px 0',
@@ -249,14 +256,14 @@ const styles = {
   forgotPassword: {
     background: 'transparent',
     border: 'none',
-    color: '#3498DB', // Vurgu açık mavi
+    color: '#3498DB',
     fontSize: '13px',
     fontWeight: '600',
     padding: '4px 0',
     cursor: 'pointer',
   },
   loginButton: {
-    backgroundColor: '#2ECC71', // Aksiyon yeşil
+    backgroundColor: '#005D32',
     color: '#FFFFFF',
     fontSize: '16px',
     fontWeight: '700',
@@ -264,10 +271,11 @@ const styles = {
     borderRadius: '16px',
     border: 'none',
     marginTop: '8px',
-    boxShadow: '0 4px 14px rgba(46, 204, 113, 0.4)',
+    boxShadow: '0 4px 14px rgba(0, 93, 50, 0.15)',
   },
   loginButtonDisabled: {
-    backgroundColor: '#95E6B5',
+    backgroundColor: '#CBE0D1',
+    color: '#6C7E6E',
     boxShadow: 'none',
   },
   footerContainer: {
@@ -278,13 +286,13 @@ const styles = {
     gap: '8px',
   },
   footerText: {
-    color: '#64748B',
+    color: '#6C7E6E',
     fontSize: '14px',
   },
   registerButton: {
     background: 'transparent',
     border: 'none',
-    color: '#3498DB', // Vurgu açık mavi
+    color: '#3498DB',
     fontSize: '14px',
     fontWeight: '700',
   },
@@ -296,22 +304,22 @@ const styles = {
   dividerLine: {
     flex: 1,
     height: '1px',
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#D5DDD6',
   },
   dividerText: {
     padding: '0 12px',
-    color: '#64748B',
+    color: '#6C7E6E',
     fontSize: '13px',
     fontWeight: '600',
   },
   googleButton: {
     backgroundColor: '#FFFFFF',
-    color: '#243B55',
+    color: '#1B2A1C',
     fontSize: '15px',
     fontWeight: '600',
     height: '56px',
     borderRadius: '16px',
-    border: '1px solid #CBD5E1',
+    border: '1px solid #D5DDD6',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

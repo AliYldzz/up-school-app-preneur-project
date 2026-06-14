@@ -47,6 +47,22 @@ CURRICULUM_DATA = {
     }
 }
 
+PREREQUISITES = {
+    "MATEMATİK": {
+        "Türev": ["Fonksiyonlar"],
+        "İntegral": ["Türev", "Fonksiyonlar"]
+    },
+    "FİZİK": {
+        "Basit Harmonik Hareket": ["Newton"]
+    },
+    "KİMYA": {
+        "Organik Kimya": ["Kimya Bilimi"]
+    },
+    "BİYOLOJİ": {
+        "İnsan Fizyolojisi & Sistemler": ["Canlıların Ortak Özellikleri"]
+    }
+}
+
 def calculate_remaining_days(exam_date_str: str) -> int:
     """Sınav tarihine kalan gün sayısını hesaplar"""
     if not exam_date_str:
@@ -91,11 +107,17 @@ def run_darr_algorithm(
     processed_tasks = []
     for task in tasks_to_schedule:
         subject = task.get("subject_name", "MATEMATİK")
-        title = task.get("title")
+        title = task.get("title") or ""
         
-        # Konu bilgilerini al
+        # Konu bilgilerini al (kısmi eşleşme ile)
         subject_info = CURRICULUM_DATA.get(subject, {})
-        topic_info = subject_info.get(title, {"weight": 1.0, "difficulty": "Orta", "estimated_hours": 10})
+        topic_info = None
+        for key, val in subject_info.items():
+            if key in title or title in key:
+                topic_info = val
+                break
+        if not topic_info:
+            topic_info = {"weight": 1.0, "difficulty": "Orta", "estimated_hours": 10}
         
         weight = topic_info["weight"]
         difficulty = topic_info["difficulty"]
@@ -115,18 +137,43 @@ def run_darr_algorithm(
             "actual_time": 0
         })
 
-    # Görevleri öncelik puanına göre azalan sırada sırala
+    # Bağımlılık Zinciri (Prerequisite Tree) Analizi ve Sıralama Önceliklendirmesi
+    # Eğer bir konu (dep) ön koşula (req) bağımlıysa, ön koşulun öncelik puanı bağımlı konudan yüksek olmalıdır.
+    for _ in range(3): # Zincirleme bağımlılıkları çözmek için 3 geçiş
+        for task in processed_tasks:
+            subj = task["subject_name"]
+            title = task["title"]
+            
+            # Bu konunun bağımlı olduğu ön koşul listesini bul
+            subj_prereqs = PREREQUISITES.get(subj, {})
+            prereq_keys = []
+            for dep, reqs in subj_prereqs.items():
+                if dep in title or title in dep:
+                    prereq_keys = reqs
+                    break
+            
+            # Eğer ön koşul varsa, kuyruktaki diğer tüm ön koşul görevlerinin puanlarını yükselt
+            if prereq_keys:
+                for req in prereq_keys:
+                    for other in processed_tasks:
+                        if other["subject_name"] == subj and (req in other["title"] or other["title"] in req):
+                            # Ön koşul görevinin önceliği, bağımlı görevin önceliğinden en az +0.1 fazla olmalı
+                            if other["priority_score"] <= task["priority_score"]:
+                                other["priority_score"] = task["priority_score"] + 0.1
+
+    # Görevleri öncelik puanına göre azalan sırada sırala (artık bağımlılıklar sıralamada korunur!)
     processed_tasks.sort(key=lambda x: x["priority_score"], reverse=True)
 
     # 7 Günlük program sepetleri (Bilişsel Yük kuralı için)
     # Her gün için en fazla daily_goal_hours * 60 dakika planlanabilir.
-    daily_limit_minutes = daily_goal_hours * 60 * energy_factor
-    schedule = {day: [] for day in range(1, 8)}
+    # Tembellik Kilidi (Anti-Abuse): Enerji ne kadar düşük girilirse girilsin, günlük çalışma süresi 120 dakikanın altına düşemez.
+    daily_limit_minutes = max(120.0, daily_goal_hours * 60 * energy_factor)
+    schedule = {day: [] for day in range(1, 6)}
     
     for task in processed_tasks:
         assigned = False
         # Görevi yerleştirmek için en uygun günü bul
-        for day in range(1, 8):
+        for day in range(1, 6):
             day_tasks = schedule[day]
             day_total_time = sum(t["estimated_time"] for t in day_tasks)
             
@@ -149,13 +196,13 @@ def run_darr_algorithm(
             
         # Eğer katı kurallardan dolayı hiçbir güne atanamadıysa, en az yükü olan güne yerleştir (Fallback)
         if not assigned:
-            least_loaded_day = min(range(1, 8), key=lambda d: sum(t["estimated_time"] for t in schedule[d]))
+            least_loaded_day = min(range(1, 6), key=lambda d: sum(t["estimated_time"] for t in schedule[d]))
             schedule[least_loaded_day].append(task)
             task["day_assigned"] = least_loaded_day
 
     # Dağıtılmış programı düzleştirilmiş liste olarak döndür
     final_scheduled_tasks = []
-    for day in range(1, 8):
+    for day in range(1, 6):
         for task in schedule[day]:
             final_scheduled_tasks.append(task)
             

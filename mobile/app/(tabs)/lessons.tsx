@@ -9,7 +9,7 @@ export default function LessonsScreen() {
         <Text style={styles.title}>Derslerim</Text>
       </View>
       <View style={styles.content}>
-        <Ionicons name="book-outline" size={64} color="#CBD5E1" />
+        <Ionicons name="book-outline" size={64} color="#6C7E6E" />
         <Text style={styles.emptyText}>Ders programın yakında burada olacak.</Text>
       </View>
     </SafeAreaView>
@@ -19,7 +19,7 @@ export default function LessonsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#EBF0EC',
   },
   header: {
     paddingHorizontal: 24,
@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#243B55',
+    color: '#1B2A1C',
   },
   content: {
     flex: 1,
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#64748B',
+    color: '#6C7E6E',
     textAlign: 'center',
     fontWeight: '500',
   },

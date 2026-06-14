@@ -107,8 +107,15 @@ def reschedule_plan(
         )
         message_prefix = "Kural tabanlı DARR motoru"
 
-    # 5. Veritabanındaki öncelik puanlarını ve süreleri güncelle
+    # 5. Veritabanındaki öncelik puanlarını, süreleri ve günleri güncelle
+    from datetime import datetime, timedelta
     for opt_task in optimized_tasks:
+        day_offset = opt_task.get("day_offset")
+        if day_offset is None:
+            day_offset = opt_task.get("day_assigned", 1) - 1
+        day_offset = max(0, min(4, day_offset))
+        new_date = (datetime.utcnow().date() + timedelta(days=day_offset)).strftime("%Y-%m-%d")
+        
         db.query(Task).filter(
             Task.id == opt_task["id"],
             Task.user_id == current_user.id
@@ -116,6 +123,7 @@ def reschedule_plan(
             {
                 "priority_score": opt_task["priority_score"],
                 "estimated_time": opt_task.get("estimated_time", 60),
+                "scheduled_date": new_date,
                 "version": Task.version + 1
             },
             synchronize_session=False

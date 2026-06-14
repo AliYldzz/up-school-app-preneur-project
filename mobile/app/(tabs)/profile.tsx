@@ -41,6 +41,8 @@ export default function ProfileScreen() {
     total_hours: 0,
     streak_days: 0,
     accuracy_rate: 0,
+    total_correct: 0,
+    total_wrong: 0,
     subject_accuracy: [] as any[],
     daily_chart: [] as number[]
   });
@@ -80,6 +82,8 @@ export default function ProfileScreen() {
           total_hours: data.total_hours || 0,
           streak_days: data.streak_days || 0,
           accuracy_rate: data.accuracy_rate || 0,
+          total_correct: data.total_correct || 0,
+          total_wrong: data.total_wrong || 0,
           subject_accuracy: data.subject_accuracy || [],
           daily_chart: data.daily_chart || []
         });
@@ -128,7 +132,7 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <LinearGradient
-        colors={['#10B981', '#3B82F6']}
+        colors={['#CBE0D1', '#B2C7B8']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.header}
@@ -163,21 +167,21 @@ export default function ProfileScreen() {
         />
         <StatCard 
           icon="checkmark-circle" 
-          label="Tamamlanan" 
+          label="Çözülen Soru" 
           value={`${stats.total_solved}`} 
           color="#10B981" 
-        />
-        <StatCard 
-          icon="flame" 
-          label="Seri" 
-          value={`${stats.streak_days} Gün`} 
-          color="#EF4444" 
         />
         <StatCard 
           icon="trending-up" 
           label="Verimlilik" 
           value={`%${stats.accuracy_rate}`} 
           color="#8B5CF6" 
+        />
+        <StatCard 
+          icon="analytics" 
+          label="Doğru-Yanlış" 
+          value={`${stats.total_correct} D - ${stats.total_wrong} Y`} 
+          color="#EF4444" 
         />
       </View>
 
@@ -194,17 +198,17 @@ export default function ProfileScreen() {
             </View>
           ) : (
             <LinearGradient
-              colors={['#F8FAFC', '#F1F5F9']}
+              colors={['#FFFFFF', '#F3F6F4']}
               style={styles.chartInner}
             >
-              <Ionicons name="stats-chart" size={40} color="#CBD5E1" />
+              <Ionicons name="stats-chart" size={40} color="#6C7E6E" />
               <Text style={styles.placeholderText}>Henüz veri yok</Text>
             </LinearGradient>
           )}
         </View>
       </View>
 
-      <View style={[styles.section, { backgroundColor: '#F0FDF4', marginHorizontal: 16, borderRadius: 24, padding: 20 }]}>
+      <View style={[styles.section, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5DDD6', marginHorizontal: 16, borderRadius: 24, padding: 20 }]}>
         <Text style={[styles.sectionTitle, { marginBottom: 20 }]}>Ders Bazlı Başarı</Text>
         
         {stats.subject_accuracy && stats.subject_accuracy.length > 0 ? stats.subject_accuracy.map((item, i) => (
@@ -277,7 +281,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F7F9',
+    backgroundColor: '#EBF0EC',
   },
   header: {
     paddingTop: 60,
@@ -296,17 +300,17 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 4,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderColor: 'rgba(27,42,28,0.1)',
   },
   editButton: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#005D32',
     width: 32,
     height: 32,
     borderRadius: 16,
@@ -318,13 +322,13 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#FFF',
+    color: '#1B2A1C',
     marginBottom: 8,
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(27,42,28,0.08)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -333,7 +337,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFF',
+    color: '#1B2A1C',
   },
   statsGrid: {
     flexDirection: 'row',
@@ -349,11 +353,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 16,
     alignItems: 'center',
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.01,
     shadowRadius: 10,
-    elevation: 2,
+    elevation: 1,
   },
   statIconContainer: {
     width: 48,
@@ -366,13 +372,13 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#64748B',
+    color: '#6C7E6E',
   },
   section: {
     padding: 16,
@@ -381,7 +387,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     marginBottom: 16,
   },
   chartContainer: {
@@ -390,7 +396,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#D5DDD6',
   },
   chartBars: {
     flex: 1,
@@ -402,14 +408,14 @@ const styles = StyleSheet.create({
   barWrapper: {
     width: 24,
     height: '100%',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F3F6F4',
     borderRadius: 12,
     justifyContent: 'flex-end',
     overflow: 'hidden',
   },
   barFill: {
     width: '100%',
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#005D32',
     borderRadius: 12,
   },
   chartInner: {
@@ -421,7 +427,7 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#94A3B8',
+    color: '#6C7E6E',
   },
   menuItem: {
     flexDirection: 'row',
@@ -430,9 +436,11 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 16,
     marginBottom: 12,
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: '#D5DDD6',
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
+    shadowOpacity: 0.01,
     shadowRadius: 5,
     elevation: 1,
   },
@@ -448,7 +456,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '700',
-    color: '#334155',
+    color: '#1B2A1C',
   },
   subjectRow: {
     marginBottom: 16,
@@ -462,22 +470,22 @@ const styles = StyleSheet.create({
   subjectName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#475569',
+    color: '#4A5D4C',
   },
   subjectPercent: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#3B82F6',
+    color: '#005D32',
   },
   progressTrack: {
     height: 8,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#EBF0EC',
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#2ECC71',
     borderRadius: 4,
   },
 });

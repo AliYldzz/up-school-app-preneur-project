@@ -18,19 +18,19 @@ import { API_BASE_URL } from '../lib/config';
 const SettingItem = ({ icon, label, description, type = 'chevron', value = false, onValueChange = () => {} }: { icon: any, label: string, description?: string, type?: string, value?: boolean, onValueChange?: (val: boolean) => void }) => (
   <TouchableOpacity style={styles.item} disabled={type === 'switch'}>
     <View style={styles.itemIcon}>
-      <Ionicons name={icon} size={22} color="#475569" />
+      <Ionicons name={icon} size={22} color="#1B2A1C" />
     </View>
     <View style={styles.itemContent}>
       <Text style={styles.itemLabel}>{label}</Text>
       {description && <Text style={styles.itemDescription}>{description}</Text>}
     </View>
-    {type === 'chevron' && <Ionicons name="chevron-forward" size={20} color="#94A3B8" />}
+    {type === 'chevron' && <Ionicons name="chevron-forward" size={20} color="#6C7E6E" />}
     {type === 'switch' && (
       <Switch 
         value={value} 
         onValueChange={onValueChange}
-        trackColor={{ false: '#E2E8F0', true: '#10B981' }}
-        thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : value ? '#FFFFFF' : '#F8FAFC'}
+        trackColor={{ false: '#D5DDD6', true: '#2ECC71' }}
+        thumbColor={Platform.OS === 'ios' ? '#FFFFFF' : value ? '#FFFFFF' : '#F3F6F4'}
       />
     )}
   </TouchableOpacity>
@@ -71,7 +71,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#1E293B" />
+          <Ionicons name="arrow-back" size={24} color="#1B2A1C" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Ayarlar</Text>
       </View>
@@ -145,15 +145,15 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EBF0EC',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#FFF',
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#D5DDD6',
   },
   backButton: {
     padding: 4,
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   scroll: {
     padding: 16,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#64748B',
+    color: '#6C7E6E',
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 12,
@@ -184,20 +184,20 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#D5DDD6',
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#F3F6F4',
   },
   itemIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F3F6F4',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -208,11 +208,11 @@ const styles = StyleSheet.create({
   itemLabel: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   itemDescription: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#6C7E6E',
     marginTop: 2,
   },
   logoutButton: {
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
     marginTop: 8,
     marginBottom: 40,
   },

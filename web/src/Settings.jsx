@@ -52,7 +52,7 @@ export default function Settings({ onBack, onLogout }) {
                     <div style={styles.itemDescription}>{item.description}</div>
                   </div>
                   <div style={styles.chevron}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C7E6E" strokeWidth="2">
                       <path d="M9 5l7 7-7 7"/>
                     </svg>
                   </div>
@@ -71,11 +71,9 @@ export default function Settings({ onBack, onLogout }) {
 const styles = {
   container: {
     width: '100%',
-    maxWidth: '440px',
-    margin: '0 auto',
     paddingBottom: '100px',
     minHeight: '100vh',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'transparent',
   },
   header: {
     padding: '24px 16px',
@@ -83,13 +81,13 @@ const styles = {
     alignItems: 'center',
     gap: '16px',
     backgroundColor: '#FFFFFF',
-    borderBottom: '1px solid #E2E8F0',
+    borderBottom: '1px solid #D5DDD6',
   },
   backButton: {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    color: '#1E293B',
+    color: '#1B2A1C',
     padding: '4px',
     display: 'flex',
     alignItems: 'center',
@@ -97,7 +95,7 @@ const styles = {
   headerTitle: {
     fontSize: '20px',
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   content: {
     padding: '20px 16px',
@@ -113,7 +111,7 @@ const styles = {
   sectionTitle: {
     fontSize: '14px',
     fontWeight: '700',
-    color: '#64748B',
+    color: '#4A5D4C',
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
     paddingLeft: '4px',
@@ -122,7 +120,7 @@ const styles = {
     backgroundColor: '#FFFFFF',
     borderRadius: '20px',
     overflow: 'hidden',
-    border: '1px solid #E2E8F0',
+    border: '1px solid #D5DDD6',
   },
   item: {
     display: 'flex',
@@ -130,14 +128,14 @@ const styles = {
     padding: '16px',
     gap: '16px',
     cursor: 'pointer',
-    borderBottom: '1px solid #F1F5F9',
+    borderBottom: '1px solid #D5DDD6',
     transition: 'background-color 0.2s',
   },
   itemIcon: {
     fontSize: '20px',
     width: '40px',
     height: '40px',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F3F6F4',
     borderRadius: '12px',
     display: 'flex',
     alignItems: 'center',
@@ -149,11 +147,11 @@ const styles = {
   itemLabel: {
     fontSize: '15px',
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#1B2A1C',
   },
   itemDescription: {
     fontSize: '12px',
-    color: '#64748B',
+    color: '#6C7E6E',
     marginTop: '2px',
   },
   chevron: {
@@ -165,8 +163,8 @@ const styles = {
     padding: '16px',
     borderRadius: '16px',
     backgroundColor: '#FFFFFF',
-    border: '1px solid #FEE2E2',
-    color: '#EF4444',
+    border: '1px solid rgba(192, 57, 43, 0.3)',
+    color: '#C0392B',
     fontSize: '15px',
     fontWeight: '700',
     cursor: 'pointer',

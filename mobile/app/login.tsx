@@ -79,7 +79,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="ornek@ogrenci.com"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor="#6C7E6E"
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
@@ -99,7 +99,7 @@ export default function LoginScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="••••••••"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor="#6C7E6E"
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
@@ -133,7 +133,7 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity style={styles.googleButton} activeOpacity={0.7}>
-            <Ionicons name="logo-google" size={20} color="#243B55" />
+            <Ionicons name="logo-google" size={20} color="#1B2A1C" />
             <Text style={styles.googleButtonText}>Google ile Giriş Yap</Text>
           </TouchableOpacity>
         </View>
@@ -152,7 +152,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8', // Çok açık buz mavisi arkaplan
+    backgroundColor: '#EBF0EC', // Soft Sage Grey
   },
   content: {
     flex: 1,
@@ -167,12 +167,12 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 24,
-    backgroundColor: 'rgba(52, 152, 219, 0.1)', // Vurgu rengi şeffaf
+    backgroundColor: '#CBE0D1', // Soft Sage Green
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(52, 152, 219, 0.3)',
+    borderColor: '#B2C7B8',
   },
   logoIcon: {
     fontSize: 40,
@@ -180,35 +180,35 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#243B55', // Ana Renk Koyu Lacivert
+    color: '#1B2A1C', // Deep Pine Green
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,
-    color: '#3498DB', // Vurgu rengi Açık Mavi
+    color: '#6C7E6E', // Muted Sage Gray
     textAlign: 'center',
     paddingHorizontal: 20,
   },
   formContainer: {
-    backgroundColor: '#FFFFFF', // Form arkaplanı beyaz (okunabilirlik için)
+    backgroundColor: '#FFFFFF', // Saf Beyaz Kart
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#243B55',
+    borderColor: '#D5DDD6', // Ince Adaçayı
+    shadowColor: '#1B2A1C',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.02,
     shadowRadius: 15,
-    elevation: 5,
+    elevation: 2,
   },
   errorContainer: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: 'rgba(239, 68, 68, 0.05)',
     padding: 12,
     borderRadius: 12,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+    borderColor: 'rgba(239, 68, 68, 0.2)',
   },
   errorText: {
     color: '#EF4444',
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    color: '#243B55', // Ana renk
+    color: '#1B2A1C', // Deep Pine Green
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
@@ -228,10 +228,10 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0F4F8', // Girdi alanı açık buz mavisi
+    backgroundColor: '#F3F6F4', // Girdi alanı açık sage gri
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#D5DDD6',
     paddingHorizontal: 16,
     height: 56,
   },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    color: '#243B55', // Ana renk
+    color: '#1B2A1C', // Deep Pine Green
     fontSize: 16,
     height: '100%',
   },
@@ -265,20 +265,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   loginButton: {
-    backgroundColor: '#2ECC71', // Aksiyon yeşil
+    backgroundColor: '#005D32', // Koyu Orman Yeşili
     height: 56,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
-    shadowColor: '#2ECC71',
+    shadowColor: '#005D32',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
   loginButtonDisabled: {
-    backgroundColor: '#95E6B5', // Soluk yeşil
+    backgroundColor: '#CBE0D1', // Soluk Adaçayı
     shadowOpacity: 0,
   },
   loginButtonText: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     marginTop: 32,
   },
   footerText: {
-    color: '#64748B',
+    color: '#6C7E6E', // Muted Sage Gray
     fontSize: 14,
   },
   registerText: {
@@ -309,11 +309,11 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#D5DDD6', // Ince Adaçayı
   },
   dividerText: {
     paddingHorizontal: 12,
-    color: '#64748B',
+    color: '#6C7E6E',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -322,14 +322,14 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#CBD5E1',
+    borderColor: '#D5DDD6',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
   },
   googleButtonText: {
-    color: '#243B55',
+    color: '#1B2A1C', // Deep Pine Green
     fontSize: 15,
     fontWeight: '600',
   },

@@ -111,7 +111,7 @@ function Timer({ task, onBack, onComplete }) {
       {/* Header */}
       <div style={styles.header}>
         <button onClick={handleBackFromTimer} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1B2A1C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
@@ -134,7 +134,7 @@ function Timer({ task, onBack, onComplete }) {
         <div style={styles.timerWrapper}>
           <div style={{
             ...styles.circleOuter,
-            background: `conic-gradient(#3498DB ${remainingPercentage}%, #E2E8F0 ${remainingPercentage}%)`
+            background: `conic-gradient(#3498DB ${remainingPercentage}%, #EBF0EC ${remainingPercentage}%)`
           }}>
             <div style={styles.circleInner}>
               <span style={styles.timeText}>{formatTime(timeLeft)}</span>
@@ -161,11 +161,11 @@ function Timer({ task, onBack, onComplete }) {
           <div style={styles.secondaryRow}>
             <button style={styles.secondaryButton} onClick={toggleTimer}>
               {isRunning ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#1E293B">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#1B2A1C">
                   <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#1E293B">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#1B2A1C">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               )}
@@ -173,7 +173,7 @@ function Timer({ task, onBack, onComplete }) {
             </button>
 
             <button style={styles.secondaryButton} onClick={handleExtend}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1E293B">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#1B2A1C">
                 <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
               </svg>
               Uzat
@@ -225,7 +225,7 @@ function Timer({ task, onBack, onComplete }) {
                   placeholder="Örn: 10"
                   value={wrongInput}
                   onChange={(e) => setWrongInput(e.target.value)}
-                  style={{ ...styles.modalInput, borderColor: '#EF4444' }}
+                  style={{ ...styles.modalInput, borderColor: '#FF9875' }}
                 />
               </div>
             </div>
@@ -252,7 +252,7 @@ const styles = {
     flexDirection: 'column',
     height: '100vh',
     width: '100%',
-    backgroundColor: '#F4F7F9',
+    backgroundColor: '#EBF0EC',
     fontFamily: "'Inter', sans-serif",
   },
   header: {
@@ -264,7 +264,7 @@ const styles = {
   headerTitle: {
     fontSize: '20px',
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#1B2A1C',
     margin: 0,
   },
   content: {
@@ -284,14 +284,14 @@ const styles = {
   subjectTitle: {
     fontSize: '16px',
     fontWeight: '700',
-    color: '#0284C7',
+    color: '#3498DB',
     margin: '0 0 8px 0',
     letterSpacing: '1px',
     textAlign: 'center',
   },
   subtitle: {
     fontSize: '14px',
-    color: '#475569',
+    color: '#4A5D4C',
     textAlign: 'center',
   },
   timerWrapper: {
@@ -312,7 +312,7 @@ const styles = {
     width: '256px',
     height: '256px',
     borderRadius: '50%',
-    backgroundColor: '#F4F7F9',
+    backgroundColor: '#FFFFFF',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -321,7 +321,7 @@ const styles = {
   timeText: {
     fontSize: '72px',
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#1B2A1C',
     fontVariantNumeric: 'tabular-nums',
     letterSpacing: '-2px',
     lineHeight: 1,
@@ -329,12 +329,12 @@ const styles = {
   statusText: {
     fontSize: '14px',
     fontWeight: '700',
-    color: '#38BDF8',
+    color: '#3498DB',
     marginTop: '4px',
   },
   quoteBox: {
-    backgroundColor: '#FAFAFA',
-    border: '1px solid #E2E8F0',
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #D5DDD6',
     borderRadius: '16px',
     padding: '16px 24px',
     width: '100%',
@@ -344,7 +344,7 @@ const styles = {
   },
   quoteText: {
     fontStyle: 'italic',
-    color: '#475569',
+    color: '#4A5D4C',
     fontSize: '14px',
     lineHeight: '20px',
   },
@@ -357,14 +357,14 @@ const styles = {
     gap: '16px',
   },
   completeButton: {
-    backgroundColor: '#2ECC71',
+    backgroundColor: '#005D32',
     borderRadius: '16px',
     padding: '18px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '10px',
-    boxShadow: '0 4px 8px rgba(46, 204, 113, 0.3)',
+    boxShadow: '0 4px 8px rgba(0, 93, 50, 0.15)',
     border: 'none',
     color: '#FFFFFF',
     fontSize: '18px',
@@ -379,14 +379,14 @@ const styles = {
   secondaryButton: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    border: '1px solid #E2E8F0',
+    border: '1px solid #D5DDD6',
     borderRadius: '16px',
     padding: '16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    color: '#1E293B',
+    color: '#1B2A1C',
     fontSize: '16px',
     fontWeight: '600',
     cursor: 'pointer',
@@ -398,7 +398,7 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+    backgroundColor: 'rgba(27, 42, 28, 0.7)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -414,18 +414,18 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '16px',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
   },
   modalTitle: {
     fontSize: '20px',
     fontWeight: '800',
-    color: '#243B55',
+    color: '#1B2A1C',
     margin: 0,
     textAlign: 'center',
   },
   modalSubtitle: {
     fontSize: '13px',
-    color: '#64748B',
+    color: '#6C7E6E',
     textAlign: 'center',
     margin: '0 0 4px 0',
     lineHeight: '1.4',
@@ -438,18 +438,18 @@ const styles = {
   modalLabel: {
     fontSize: '12px',
     fontWeight: '700',
-    color: '#243B55',
+    color: '#4A5D4C',
   },
   modalInput: {
     padding: '12px',
     borderRadius: '12px',
-    border: '1px solid #CBD5E1',
+    border: '1px solid #D5DDD6',
     fontSize: '15px',
     outline: 'none',
     width: '100%',
     boxSizing: 'border-box',
-    backgroundColor: '#FFFFFF',
-    color: '#243B55',
+    backgroundColor: '#F3F6F4',
+    color: '#1B2A1C',
   },
   errorText: {
     color: '#EF4444',
@@ -468,7 +468,7 @@ const styles = {
   },
   modalConfirmButton: {
     flex: 1.5,
-    backgroundColor: '#2ECC71',
+    backgroundColor: '#005D32',
     color: '#FFFFFF',
     border: 'none',
     borderRadius: '12px',
@@ -476,13 +476,13 @@ const styles = {
     fontSize: '14px',
     fontWeight: '700',
     cursor: 'pointer',
-    boxShadow: '0 4px 10px rgba(46, 204, 113, 0.2)',
+    boxShadow: '0 4px 10px rgba(0, 93, 50, 0.15)',
   },
   modalCancelButton: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
-    color: '#64748B',
-    border: '1px solid #E2E8F0',
+    backgroundColor: '#FFFFFF',
+    color: '#6C7E6E',
+    border: '1px solid #D5DDD6',
     borderRadius: '12px',
     padding: '12px',
     fontSize: '14px',
