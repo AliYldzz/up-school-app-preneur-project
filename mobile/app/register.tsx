@@ -9,6 +9,17 @@ import { supabase } from '../lib/supabaseClient';
 import { generateInitialStudyPlan } from '../lib/aiService';
 import { store } from '../store';
 
+const getLocalDateString = (offsetDays = 0) => {
+  const d = new Date();
+  if (offsetDays !== 0) {
+    d.setDate(d.getDate() + offsetDays);
+  }
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const TYT_SUB_TOPICS: Record<string, string[]> = {
   'Matematik': ['Sayılar & Cebir', 'Problemler', 'Çarpanlara Ayırma', 'Fonksiyonlar (Temel)', 'Kümeler & Veri'],
   'Fizik': ['Fizik Bilimi & Madde', 'Kuvvet & Hareket (Temel)', 'Isı, Sıcaklık & Enerji', 'Elektrik (Temel)', 'Basınç, Dalgalar & Optik'],
@@ -171,19 +182,23 @@ export default function RegisterScreen() {
           // Limit to max 6 AI tasks total to prevent overloading
           const finalAITasks = uniqueAITasks.slice(0, 6);
 
-          const supabaseTasks = finalAITasks.map((t: any) => ({
-            user_id: userId,
-            title: t.title,
-            subject_name: t.subject_name,
-            estimated_time: t.estimated_time || 60,
-            priority_score: t.priority_score || 1.0,
-            status: 'pending',
-            scheduled_date: new Date(Date.now() + (t.day_offset || 0) * 86400000).toISOString().split('T')[0]
-          }));
+          const supabaseTasks = finalAITasks.map((t: any) => {
+            const offset = t.day_offset !== undefined ? t.day_offset : (t.dayOffset !== undefined ? t.dayOffset : 0);
+            const dateStr = getLocalDateString(offset);
+            return {
+              user_id: userId,
+              title: t.title,
+              subject_name: t.subject_name,
+              estimated_time: t.estimated_time || 60,
+              priority_score: t.priority_score || 1.0,
+              status: 'pending',
+              scheduled_date: dateStr
+            };
+          });
 
           // Add daily routines for Day 0 to Day 4
           for (let dayOffset = 0; dayOffset <= 4; dayOffset++) {
-            const dateStr = new Date(Date.now() + dayOffset * 86400000).toISOString().split('T')[0];
+            const dateStr = getLocalDateString(dayOffset);
             supabaseTasks.push({
               user_id: userId,
               title: "30 Paragraf Sorusu [TYT]",

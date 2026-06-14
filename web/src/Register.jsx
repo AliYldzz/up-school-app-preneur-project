@@ -3,6 +3,17 @@ import { API_BASE_URL } from './config';
 import { supabase } from './supabaseClient';
 import { generateInitialStudyPlan } from './aiService';
 
+const getLocalDateString = (offsetDays = 0) => {
+  const d = new Date();
+  if (offsetDays !== 0) {
+    d.setDate(d.getDate() + offsetDays);
+  }
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const getDynamicQuestions = () => {
   return [
     {
@@ -156,8 +167,6 @@ export default function Register({ onBack, onRegisterSuccess }) {
         payload.focus_time
       )
       .then((aiTasks) => {
-        const today = new Date();
-        
         // Client-side safety filters: deduplicate by title, filter out daily routine duplicates, limit to max 6 AI tasks
         const uniqueAITasks = [];
         const seenTitles = new Set();
@@ -182,9 +191,8 @@ export default function Register({ onBack, onRegisterSuccess }) {
         const finalAITasks = uniqueAITasks.slice(0, 6);
 
         const supabaseTasks = finalAITasks.map((t) => {
-          const taskDate = new Date();
-          taskDate.setDate(today.getDate() + (t.day_offset || 0));
-          const dateStr = taskDate.toISOString().split('T')[0];
+          const offset = t.day_offset !== undefined ? t.day_offset : (t.dayOffset !== undefined ? t.dayOffset : 0);
+          const dateStr = getLocalDateString(offset);
           return {
             user_id: userId,
             title: t.title,
@@ -198,9 +206,7 @@ export default function Register({ onBack, onRegisterSuccess }) {
 
         // Add daily routines for Day 0 to Day 4
         for (let dayOffset = 0; dayOffset <= 4; dayOffset++) {
-          const taskDate = new Date();
-          taskDate.setDate(today.getDate() + dayOffset);
-          const dateStr = taskDate.toISOString().split('T')[0];
+          const dateStr = getLocalDateString(dayOffset);
           
           supabaseTasks.push({
             user_id: userId,

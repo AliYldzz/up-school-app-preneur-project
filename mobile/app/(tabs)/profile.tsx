@@ -16,6 +16,25 @@ import * as ImagePicker from 'expo-image-picker';
 import { store } from '../../store';
 import { supabase } from '../../lib/supabaseClient';
 
+const getLocalDateString = (offsetDays = 0) => {
+  const d = new Date();
+  if (offsetDays !== 0) {
+    d.setDate(d.getDate() + offsetDays);
+  }
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getLocalDateStringForDate = (d: Date) => {
+  if (!d) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const { width } = Dimensions.get('window');
 
 const StatCard = ({ icon, label, value, color }: { icon: any, label: string, value: string, color: string }) => (
@@ -71,54 +90,101 @@ export default function ProfileScreen() {
     // Compute stats from tasks table
     const { data: tasks } = await supabase
       .from('tasks')
-      .select('status, estimated_time, subject_name, created_at')
+      .select('status, estimated_time, subject_name, created_at, questions_solved, questions_correct, questions_wrong')
       .eq('user_id', user.id);
 
     if (tasks) {
       const completed = tasks.filter(t => t.status === 'completed');
       const totalHours = Math.round(completed.reduce((sum, t) => sum + (t.estimated_time || 0), 0) / 60);
 
-      // Subject accuracy (simplified: completed/total per subject)
-      const subjectMap: Record<string, { total: number; done: number }> = {};
+      const totalSolvedQuestions = completed.reduce((sum, t) => sum + (t.questions_solved || 0), 0);
+      const totalCorrect = completed.reduce((sum, t) => sum + (t.questions_correct || 0), 0);
+      const totalWrong = completed.reduce((sum, t) => sum + (t.questions_wrong || 0), 0);
+      const accuracyRate = totalSolvedQuestions > 0 ? Math.round((totalCorrect / totalSolvedQuestions) * 100) : 0;
+
+      // Subject accuracy mapped to focus area core subjects
+      const userFocus = profile?.focus_area || 'Sayısal';
+      const getSubjectList = () => {
+        if (userFocus === 'Sözel') {
+          return ['TÜRKÇE', 'EDEBİYAT', 'TARİH', 'COĞRAFYA'];
+        } else if (userFocus === 'Eşit Ağırlık') {
+          return ['MATEMATİK', 'TÜRKÇE', 'EDEBİYAT', 'TARİH', 'COĞRAFYA'];
+        } else if (userFocus === 'Dil') {
+          return ['TÜRKÇE', 'MATEMATİK', 'TARİH', 'COĞRAFYA'];
+        } else { // Sayısal
+          return ['MATEMATİK', 'FİZİK', 'KİMYA', 'BİYOLOJİ', 'TÜRKÇE'];
+        }
+      };
+
+      const subjectStatsMap: Record<string, { solved: number; correct: number }> = {};
       tasks.forEach(t => {
-        if (!subjectMap[t.subject_name]) subjectMap[t.subject_name] = { total: 0, done: 0 };
-        subjectMap[t.subject_name].total++;
-        if (t.status === 'completed') subjectMap[t.subject_name].done++;
+        const subName = t.subject_name ? t.subject_name.toUpperCase() : 'DİĞER';
+        if (!subjectStatsMap[subName]) {
+          subjectStatsMap[subName] = { solved: 0, correct: 0 };
+        }
+        if (t.status === 'completed') {
+          subjectStatsMap[subName].solved += (t.questions_solved || 0);
+          subjectStatsMap[subName].correct += (t.questions_correct || 0);
+        }
       });
-      const subjectAccuracy = Object.entries(subjectMap).map(([name, v]) => ({
-        name,
-        percent: Math.round((v.done / v.total) * 100)
-      }));
+
+      const subjectAccuracy = getSubjectList().map(subName => {
+        const statsObj = subjectStatsMap[subName.toUpperCase()];
+        return {
+          name: subName,
+          percent: statsObj && statsObj.solved > 0 ? Math.round((statsObj.correct / statsObj.solved) * 100) : 0
+        };
+      });
 
       // Calculate streak client-side
       let computedStreakDays = 0;
       const activeDays = new Set<string>();
       completed.forEach(t => {
         if (t.created_at) {
-          const dateStr = new Date(t.created_at).toISOString().split('T')[0];
+          const dateStr = getLocalDateStringForDate(new Date(t.created_at));
           activeDays.add(dateStr);
         }
       });
 
       const checkDate = new Date();
-      let checkDateStr = checkDate.toISOString().split('T')[0];
+      let checkDateStr = getLocalDateStringForDate(checkDate);
       if (!activeDays.has(checkDateStr)) {
         checkDate.setDate(checkDate.getDate() - 1);
-        checkDateStr = checkDate.toISOString().split('T')[0];
+        checkDateStr = getLocalDateStringForDate(checkDate);
       }
 
       while (activeDays.has(checkDateStr)) {
         computedStreakDays++;
         checkDate.setDate(checkDate.getDate() - 1);
-        checkDateStr = checkDate.toISOString().split('T')[0];
+        checkDateStr = getLocalDateStringForDate(checkDate);
       }
+
+      // Calculate daily chart
+      const dailyChart = [0, 0, 0, 0, 0, 0, 0];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        const dStr = getLocalDateStringForDate(d);
+        
+        const dayTasks = completed.filter(t => {
+          if (!t.created_at) return false;
+          return getLocalDateStringForDate(new Date(t.created_at)) === dStr;
+        });
+        dailyChart[i] = dayTasks.reduce((sum, t) => sum + (t.questions_solved || 0), 0);
+      }
+      const maxVal = Math.max(...dailyChart);
+      const dailyChartPercent = dailyChart.map(v => maxVal > 0 ? Math.round((v / maxVal) * 100) : 0);
 
       setStats(prev => ({
         ...prev,
-        total_solved: completed.length,
+        total_solved: totalSolvedQuestions,
         total_hours: totalHours,
         streak_days: computedStreakDays,
+        accuracy_rate: accuracyRate,
+        total_correct: totalCorrect,
+        total_wrong: totalWrong,
         subject_accuracy: subjectAccuracy,
+        daily_chart: dailyChartPercent
       }));
     }
   };
@@ -218,7 +284,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>İstatistikler</Text>
         <View style={styles.chartContainer}>
-          {stats.daily_chart && stats.daily_chart.length > 0 ? (
+          {stats.daily_chart && stats.daily_chart.some(val => val > 0) ? (
             <View style={styles.chartBars}>
               {stats.daily_chart.map((val, idx) => (
                 <View key={idx} style={styles.barWrapper}>
@@ -241,17 +307,28 @@ export default function ProfileScreen() {
       <View style={[styles.section, { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D5DDD6', marginHorizontal: 16, borderRadius: 24, padding: 20 }]}>
         <Text style={[styles.sectionTitle, { marginBottom: 20 }]}>Ders Bazlı Başarı</Text>
         
-        {stats.subject_accuracy && stats.subject_accuracy.length > 0 ? stats.subject_accuracy.map((item, i) => (
-          <View key={i} style={styles.subjectRow}>
-            <View style={styles.subjectMeta}>
-              <Text style={styles.subjectName}>{item.name}</Text>
-              <Text style={styles.subjectPercent}>{item.percent}%</Text>
+        {stats.subject_accuracy && stats.subject_accuracy.length > 0 ? stats.subject_accuracy.map((item, i) => {
+          const getSubjectColor = (name: string) => {
+            const n = name.toUpperCase();
+            if (n.includes('MATEMATİK')) return '#3498DB';
+            if (n.includes('FİZİK')) return '#FF9875';
+            if (n.includes('TÜRKÇE')) return '#005D32';
+            if (n.includes('KİMYA')) return '#9B59B6';
+            if (n.includes('BİYOLOJİ')) return '#E67E22';
+            return '#717970';
+          };
+          return (
+            <View key={i} style={styles.subjectRow}>
+              <View style={styles.subjectMeta}>
+                <Text style={styles.subjectName}>{item.name}</Text>
+                <Text style={styles.subjectPercent}>{item.percent}%</Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${item.percent}%`, backgroundColor: getSubjectColor(item.name) }]} />
+              </View>
             </View>
-            <View style={styles.progressTrack}>
-              <View style={[styles.progressFill, { width: `${item.percent}%` }]} />
-            </View>
-          </View>
-        )) : (
+          );
+        }) : (
           <Text style={{ textAlign: 'center', color: '#64748B', marginVertical: 12 }}>Henüz yeterli veri yok.</Text>
         )}
       </View>

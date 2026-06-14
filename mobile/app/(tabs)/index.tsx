@@ -8,6 +8,25 @@ import { store } from '../../store';
 import { supabase } from '../../lib/supabaseClient';
 import { rescheduleStudyPlan } from '../../lib/aiService';
 
+const getLocalDateString = (offsetDays = 0) => {
+  const d = new Date();
+  if (offsetDays !== 0) {
+    d.setDate(d.getDate() + offsetDays);
+  }
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getLocalDateStringForDate = (d: Date) => {
+  if (!d) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const Star = ({ delay }: { delay: number }) => {
@@ -195,22 +214,22 @@ export default function HomeScreen() {
         const activeDays = new Set<string>();
         completedTasksData.forEach(t => {
           if (t.created_at) {
-            const dateStr = new Date(t.created_at).toISOString().split('T')[0];
+            const dateStr = getLocalDateStringForDate(new Date(t.created_at));
             activeDays.add(dateStr);
           }
         });
 
         const checkDate = new Date();
-        let checkDateStr = checkDate.toISOString().split('T')[0];
+        let checkDateStr = getLocalDateStringForDate(checkDate);
         if (!activeDays.has(checkDateStr)) {
           checkDate.setDate(checkDate.getDate() - 1);
-          checkDateStr = checkDate.toISOString().split('T')[0];
+          checkDateStr = getLocalDateStringForDate(checkDate);
         }
 
         while (activeDays.has(checkDateStr)) {
           computedStreakDays++;
           checkDate.setDate(checkDate.getDate() - 1);
-          checkDateStr = checkDate.toISOString().split('T')[0];
+          checkDateStr = getLocalDateStringForDate(checkDate);
         }
       }
     } catch (err) {
@@ -231,7 +250,7 @@ export default function HomeScreen() {
     }
 
     // Load today's tasks
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const { data: tasks, error } = await supabase
       .from('tasks')
       .select('*')
@@ -244,8 +263,10 @@ export default function HomeScreen() {
       return;
     }
 
-    if (tasks && tasks.length > 0) {
+    if (tasks) {
       setProgram(tasks.map(formatTask));
+    } else {
+      setProgram([]);
     }
   };
 

@@ -11,6 +11,25 @@ import Admin from './Admin';
 import { supabase } from './supabaseClient';
 import { rescheduleStudyPlan } from './aiService';
 
+const getLocalDateString = (offsetDays = 0) => {
+  const d = new Date();
+  if (offsetDays !== 0) {
+    d.setDate(d.getDate() + offsetDays);
+  }
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getLocalDateStringForDate = (d) => {
+  if (!d) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const cleanTitle = (title) => {
   return title ? title.replace(/\s*[\(\[](Kolay|Orta|Zor)[\)\]]/gi, '').trim() : '';
 };
@@ -146,10 +165,8 @@ function App() {
         }
         
         const updatePromises = uniqueRescheduled.map(t => {
-          const offset = t.day_offset || 0;
-          const taskDate = new Date();
-          taskDate.setDate(today.getDate() + offset);
-          const dateStr = taskDate.toISOString().split('T')[0];
+          const offset = t.day_offset !== undefined ? t.day_offset : (t.dayOffset !== undefined ? t.dayOffset : 0);
+          const dateStr = getLocalDateString(offset);
           
           return supabase.from('tasks')
             .update({
@@ -174,7 +191,9 @@ function App() {
         setIsRescheduling(false);
         setShowRescheduleModal(false);
         
-        const formatted = freshTasks.map(ct => ({
+        const todayStr = getLocalDateString();
+        const todayTasks = freshTasks.filter(t => t.scheduled_date === todayStr);
+        const formatted = todayTasks.map(ct => ({
           id: ct.id,
           subject: ct.subject_name,
           title: ct.title,
@@ -276,17 +295,21 @@ function App() {
         if (!data || data.length === 0) {
           // Create initial tasks
           supabase.auth.getUser().then(({ data: { user } }) => {
+            const todayStr = getLocalDateString();
             const initialTasks = INITIAL_PROGRAM.map(t => ({
               user_id: user.id,
               title: t.title,
               subject_name: t.subject,
               estimated_time: parseInt(t.timeRange) || 60,
-              status: t.status === 'active' ? 'active' : t.status === 'completed' ? 'completed' : 'pending'
+              status: t.status === 'active' ? 'active' : t.status === 'completed' ? 'completed' : 'pending',
+              scheduled_date: todayStr
             }));
             supabase.from('tasks').insert(initialTasks).select('*')
             .then(({ data: createdTasks, error: insertError }) => {
               if (insertError) throw insertError;
-              const formatted = createdTasks.map(ct => ({
+              const todayStr = getLocalDateString();
+              const todayTasks = createdTasks.filter(t => t.scheduled_date === todayStr);
+              const formatted = todayTasks.map(ct => ({
                 id: ct.id,
                 subject: ct.subject_name,
                 title: ct.title,
@@ -299,7 +322,9 @@ function App() {
             });
           });
         } else {
-          const formatted = data.map(ct => ({
+          const todayStr = getLocalDateString();
+          const todayTasks = data.filter(t => t.scheduled_date === todayStr);
+          const formatted = todayTasks.map(ct => ({
             id: ct.id,
             subject: ct.subject_name,
             title: ct.title,
@@ -344,23 +369,23 @@ function App() {
         const activeDays = new Set();
         data.forEach(t => {
           if (t.created_at) {
-            const dateStr = new Date(t.created_at).toISOString().split('T')[0];
+            const dateStr = getLocalDateStringForDate(new Date(t.created_at));
             activeDays.add(dateStr);
           }
         });
         
         let streak_days = 0;
         const checkDate = new Date();
-        let checkDateStr = checkDate.toISOString().split('T')[0];
+        let checkDateStr = getLocalDateStringForDate(checkDate);
         if (!activeDays.has(checkDateStr)) {
           checkDate.setDate(checkDate.getDate() - 1);
-          checkDateStr = checkDate.toISOString().split('T')[0];
+          checkDateStr = getLocalDateStringForDate(checkDate);
         }
         
         while (activeDays.has(checkDateStr)) {
           streak_days++;
           checkDate.setDate(checkDate.getDate() - 1);
-          checkDateStr = checkDate.toISOString().split('T')[0];
+          checkDateStr = getLocalDateStringForDate(checkDate);
         }
         
         const subjectStats = {};
@@ -389,11 +414,11 @@ function App() {
         for (let i = 0; i < 7; i++) {
           const d = new Date();
           d.setDate(d.getDate() - (6 - i));
-          const dStr = d.toISOString().split('T')[0];
+          const dStr = getLocalDateStringForDate(d);
           
           const dayTasks = data.filter(t => {
             if (!t.created_at) return false;
-            return new Date(t.created_at).toISOString().split('T')[0] === dStr;
+            return getLocalDateStringForDate(new Date(t.created_at)) === dStr;
           });
           dailyChart[i] = dayTasks.reduce((sum, t) => sum + (t.questions_solved || 0), 0);
         }
@@ -661,7 +686,7 @@ function App() {
               <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFF">
                 <path d="M19.48,13.03C19.48,13.03 19.48,13.03 19.48,13.03C19.48,17.15 16.13,20.5 12,20.5C7.87,20.5 4.52,17.15 4.52,13.03C4.52,10.05 6.07,7.24 8.61,5.65C8.95,5.44 9.38,5.63 9.49,6.01C9.8,7.11 10.37,8.08 11.13,8.84C11.52,9.23 12.16,9.08 12.35,8.56C12.8,7.3 12.87,5.92 12.56,4.64C12.45,4.19 12.83,3.78 13.29,3.87C16.92,4.61 19.48,8.55 19.48,13.03Z" />
               </svg>
-              <span style={styles.streakText}>12 Gün</span>
+              <span style={styles.streakText}>{userStats.streak_days || 0} Gün</span>
             </div>
           </div>
 
@@ -1178,7 +1203,7 @@ function App() {
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="#1B2A1C">
                       <path d="M19.48,13.03C19.48,13.03 19.48,13.03 19.48,13.03C19.48,17.15 16.13,20.5 12,20.5C7.87,20.5 4.52,17.15 4.52,13.03C4.52,10.05 6.07,7.24 8.61,5.65C8.95,5.44 9.38,5.63 9.49,6.01C9.8,7.11 10.37,8.08 11.13,8.84C11.52,9.23 12.16,9.08 12.35,8.56C12.8,7.3 12.87,5.92 12.56,4.64C12.45,4.19 12.83,3.78 13.29,3.87C16.92,4.61 19.48,8.55 19.48,13.03Z" />
                     </svg>
-                    <span style={{...styles.streakText, fontSize: '14px', fontWeight: '800', color: '#1B2A1C'}}>12 Günlük Seri</span>
+                    <span style={{...styles.streakText, fontSize: '14px', fontWeight: '800', color: '#1B2A1C'}}>{userStats.streak_days || 0} Günlük Seri</span>
                   </div>
                 </div>
 

@@ -146,7 +146,7 @@ export default function Profile({ onSettings, profilePic, userName, userTarget, 
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <h3 style={styles.cardTitle}>Genel Performans</h3>
-            <div style={styles.badge}>+14% bu hafta</div>
+            {userStats?.total_solved > 0 && <div style={styles.badge}>+14% bu hafta</div>}
           </div>
 
           <div style={styles.statsGrid}>
@@ -167,7 +167,7 @@ export default function Profile({ onSettings, profilePic, userName, userTarget, 
                   <div
                     style={{
                       ...styles.bar,
-                      height: `${Math.max(val, hasData ? 5 : 15)}%`,
+                      height: val > 0 ? `${val}%` : '4px',
                       background: isToday
                         ? 'linear-gradient(180deg, #2ECC71 0%, #16A34A 100%)'
                         : isEmpty
@@ -192,21 +192,50 @@ export default function Profile({ onSettings, profilePic, userName, userTarget, 
         <div style={{...styles.card, backgroundColor: '#EBF5EC'}}>
           <h3 style={{...styles.cardTitle, marginBottom: '20px'}}>Ders Bazlı Başarı</h3>
           
-          {[
-            { name: 'Matematik', percent: 92, color: '#3498DB' },
-            { name: 'Fizik', percent: 78, color: '#FF9875' },
-            { name: 'Kimya', percent: 65, color: '#717970' }
-          ].map((item, i) => (
-            <div key={i} style={styles.subjectRow}>
-              <div style={styles.subjectMeta}>
-                <span style={styles.subjectName}>{item.name}</span>
-                <span style={styles.subjectPercent}>{item.percent}%</span>
-              </div>
-              <div style={styles.progressTrack}>
-                <div style={{...styles.progressFill, width: `${item.percent}%`, backgroundColor: item.color}} />
-              </div>
-            </div>
-          ))}
+          {(() => {
+            const getSubjectList = () => {
+              if (userFocus === 'Sözel') {
+                return ['TÜRKÇE', 'EDEBİYAT', 'TARİH', 'COĞRAFYA'];
+              } else if (userFocus === 'Eşit Ağırlık') {
+                return ['MATEMATİK', 'TÜRKÇE', 'EDEBİYAT', 'TARİH', 'COĞRAFYA'];
+              } else if (userFocus === 'Dil') {
+                return ['TÜRKÇE', 'MATEMATİK', 'TARİH', 'COĞRAFYA'];
+              } else { // Sayısal
+                return ['MATEMATİK', 'FİZİK', 'KİMYA', 'BİYOLOJİ', 'TÜRKÇE'];
+              }
+            };
+            
+            const subjectsToDisplay = getSubjectList().map(subName => {
+              const found = userStats?.subject_accuracy?.find(s => s.name.toUpperCase() === subName.toUpperCase());
+              return {
+                name: subName,
+                percent: found ? found.percent : 0
+              };
+            });
+
+            return subjectsToDisplay.map((item, i) => {
+              const getSubjectColor = (name) => {
+                const n = name.toUpperCase();
+                if (n.includes('MATEMATİK')) return '#3498DB';
+                if (n.includes('FİZİK')) return '#FF9875';
+                if (n.includes('TÜRKÇE')) return '#005D32';
+                if (n.includes('KİMYA')) return '#9B59B6';
+                if (n.includes('BİYOLOJİ')) return '#E67E22';
+                return '#717970';
+              };
+              return (
+                <div key={i} style={styles.subjectRow}>
+                  <div style={styles.subjectMeta}>
+                    <span style={styles.subjectName}>{item.name}</span>
+                    <span style={styles.subjectPercent}>{item.percent}%</span>
+                  </div>
+                  <div style={styles.progressTrack}>
+                    <div style={{...styles.progressFill, width: `${item.percent}%`, backgroundColor: getSubjectColor(item.name)}} />
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
       </div>
     </div>
