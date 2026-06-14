@@ -5,7 +5,14 @@ import os
 
 # Kolay kurulum ve deneme için SQLite kullanıyoruz.
 # Canlıya çıkarken Render/Supabase üzerinden PostgreSQL verilebilir.
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./lms_app.db")
+db_url = os.getenv("DATABASE_URL")
+if not db_url:
+    if os.getenv("VERCEL"):
+        db_url = "sqlite:////tmp/lms_app.db"
+    else:
+        db_url = "sqlite:///./lms_app.db"
+
+SQLALCHEMY_DATABASE_URL = db_url
 
 # Render/Koyeb gibi platformlar url'i postgres:// ile başlatır, SQLAlchemy postgresql:// ister.
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
