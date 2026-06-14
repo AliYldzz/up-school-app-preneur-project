@@ -25,6 +25,7 @@ mobile/google-service-account.json
 web/node_modules/
 web/dist/
 web/.vite/
+web/dev-dist/
 
 # General
 .DS_Store
