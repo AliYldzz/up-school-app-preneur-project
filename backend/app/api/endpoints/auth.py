@@ -96,18 +96,18 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     access_token = create_access_token(subject=new_user.email)
     return {"access_token": access_token, "token_type": "bearer"}
 
-# @router.post("/login", response_model=Token)
-# def login(login_in: UserLogin, db: Session = Depends(get_db)):
-#     """E-posta ve şifre ile giriş yapar, JWT Token döndürür"""
-#     user = db.query(User).filter(User.email == login_in.email).first()
-#     if not user or not verify_password(login_in.password, user.hashed_password):
-#         raise HTTPException(
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             detail="Hatalı e-posta veya şifre."
-#         )
-#     
-#     access_token = create_access_token(subject=user.email)
-#     return {"access_token": access_token, "token_type": "bearer"}
+@router.post("/login", response_model=Token)
+def login(login_in: UserLogin, db: Session = Depends(get_db)):
+    """E-posta ve şifre ile giriş yapar, JWT Token döndürür"""
+    user = db.query(User).filter(User.email == login_in.email).first()
+    if not user or not verify_password(login_in.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Hatalı e-posta veya şifre."
+        )
+    
+    access_token = create_access_token(subject=user.email)
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @router.get("/me", response_model=UserResponse)
