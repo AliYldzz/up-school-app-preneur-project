@@ -11,7 +11,7 @@ def call_gemini_api(payload: Dict[str, Any]) -> str:
     if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
         raise ValueError("Gemini API Anahtarı eksik veya geçersiz.")
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     
     req = urllib.request.Request(
@@ -24,7 +24,7 @@ def call_gemini_api(payload: Dict[str, Any]) -> str:
     max_retries = 4
     for attempt in range(max_retries):
         try:
-            with urllib.request.urlopen(req, timeout=20) as response:
+            with urllib.request.urlopen(req, timeout=60) as response:
                 res_data = json.loads(response.read().decode("utf-8"))
                 text_response = res_data["candidates"][0]["content"]["parts"][0]["text"]
                 return text_response
@@ -37,6 +37,12 @@ def call_gemini_api(payload: Dict[str, Any]) -> str:
                 continue
             raise e
         except Exception as e:
+            print(f"[Gemini API Error] {type(e).__name__}: {e}")
+            if hasattr(e, "read"):
+                try:
+                    print(f"[Gemini API Error Detail] {e.read().decode('utf-8')}")
+                except Exception:
+                    pass
             if attempt < max_retries - 1:
                 sleep_time = (attempt + 1) * 5
                 print(f"[Gemini API] Beklenmedik hata. {sleep_time} saniye sonra tekrar deneniyor... (Deneme {attempt+1}/{max_retries})")
