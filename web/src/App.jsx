@@ -134,7 +134,18 @@ function App() {
       .then(async (rescheduledTasks) => {
         const today = new Date();
         
-        const updatePromises = rescheduledTasks.map(t => {
+        // Client-side safety filter: deduplicate rescheduled tasks by task ID
+        const uniqueRescheduled = [];
+        const seenIds = new Set();
+        for (const t of rescheduledTasks) {
+          if (!t || !t.id) continue;
+          if (!seenIds.has(t.id)) {
+            seenIds.add(t.id);
+            uniqueRescheduled.push(t);
+          }
+        }
+        
+        const updatePromises = uniqueRescheduled.map(t => {
           const offset = t.day_offset || 0;
           const taskDate = new Date();
           taskDate.setDate(today.getDate() + offset);

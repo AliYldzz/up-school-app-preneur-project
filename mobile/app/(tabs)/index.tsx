@@ -285,7 +285,19 @@ export default function HomeScreen() {
 
         // Write rescheduled tasks back to Supabase
         const todayStr = new Date().toISOString().split('T')[0];
+        
+        // Client-side safety filter: deduplicate rescheduled tasks by task ID
+        const uniqueRescheduled: any[] = [];
+        const seenIds = new Set();
         for (const t of rescheduled) {
+          if (!t || !t.id) continue;
+          if (!seenIds.has(t.id)) {
+            seenIds.add(t.id);
+            uniqueRescheduled.push(t);
+          }
+        }
+
+        for (const t of uniqueRescheduled) {
           const schedDate = new Date();
           schedDate.setDate(schedDate.getDate() + (t.day_offset || 0));
           const dateStr = schedDate.toISOString().split('T')[0];

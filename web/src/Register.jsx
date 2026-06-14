@@ -157,7 +157,31 @@ export default function Register({ onBack, onRegisterSuccess }) {
       )
       .then((aiTasks) => {
         const today = new Date();
-        const supabaseTasks = aiTasks.map((t) => {
+        
+        // Client-side safety filters: deduplicate by title, filter out daily routine duplicates, limit to max 6 AI tasks
+        const uniqueAITasks = [];
+        const seenTitles = new Set();
+        
+        for (const t of aiTasks) {
+          if (!t || !t.title) continue;
+          const cleanTitleStr = t.title.trim().toLowerCase();
+          
+          // Check if duplicate of daily routines (paragraf / problem)
+          if (cleanTitleStr.includes("paragraf") || cleanTitleStr.includes("problem")) {
+            continue;
+          }
+          
+          // Check if duplicate of already added AI task
+          if (!seenTitles.has(cleanTitleStr)) {
+            seenTitles.add(cleanTitleStr);
+            uniqueAITasks.push(t);
+          }
+        }
+        
+        // Limit to max 6 AI tasks total to prevent overloading
+        const finalAITasks = uniqueAITasks.slice(0, 6);
+
+        const supabaseTasks = finalAITasks.map((t) => {
           const taskDate = new Date();
           taskDate.setDate(today.getDate() + (t.day_offset || 0));
           const dateStr = taskDate.toISOString().split('T')[0];

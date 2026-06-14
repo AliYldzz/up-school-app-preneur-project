@@ -20,6 +20,9 @@ export async function rescheduleStudyPlan(
   incompleteTasks: TaskItem[],
   otherTasks: TaskItem[]
 ): Promise<any[]> {
+  if (!GEMINI_API_KEY) {
+    throw new Error("Gemini AI API anahtarı (EXPO_PUBLIC_GEMINI_API_KEY veya GEMINI_API_KEY) ayarlanmamış. Lütfen ortam değişkenlerini kontrol edin.");
+  }
   const prompt = `
     Sen YKS (TYT/AYT) öğrencileri için akıllı bir DARR (Dynamic Adaptive Road Re-routing) planlama motorusun.
     Öğrenci son günlerdeki çalışma planını aksattı. Kalan gün sayısı: ${remainingDays}.
@@ -41,6 +44,8 @@ export async function rescheduleStudyPlan(
     4. ZAYIF DERS: Öğrencinin alanı (${focusArea}) için olan kritik görevlerin priority_score değerini her zaman daha yüksek (4.0 - 5.0) tut.
     5. Her görev için yeni bir priority_score (0.0 - 5.0 arası) belirle.
     6. Her görev için önümüzdeki 5 gün için bir gün sapması ("day_offset": 0 ile 4 arasında bir tamsayı) belirle. (0: Bugün, 1: Yarın vb.)
+    7. TEKRAR ETME YASAĞI: Listede verilen görevlerin başlıkları aynı ise, bunları mükerrer (duplicate) olarak planlama, tek bir görev olarak birleştir veya birini elenmiş say.
+    8. GÜNLÜK GÖREV YÜKÜ LİMİTİ: Her güne (day_offset 0 ile 4) en fazla 2 görev yerleştir. Günlük yükü aşırı yığma.
     
     Yanıtını sadece ve sadece belirtilen JSON formatında ver. Başka hiçbir açıklama, markdown işareti veya ek metin ekleme.
     JSON Formatı:
@@ -93,6 +98,9 @@ export async function rescheduleStudyPlan(
 }
 
 export async function solveAndAnalyzeQuestion(imageBase64: string): Promise<any> {
+  if (!GEMINI_API_KEY) {
+    throw new Error("Gemini AI API anahtarı (EXPO_PUBLIC_GEMINI_API_KEY veya GEMINI_API_KEY) ayarlanmamış. Lütfen ortam değişkenlerini kontrol edin.");
+  }
   let mimeType = 'image/png';
   let cleanData = imageBase64;
 
@@ -239,6 +247,9 @@ export async function generateInitialStudyPlan(
   weeklyHours: string,
   focusTime: string
 ): Promise<any[]> {
+  if (!GEMINI_API_KEY) {
+    throw new Error("Gemini AI API anahtarı (EXPO_PUBLIC_GEMINI_API_KEY veya GEMINI_API_KEY) ayarlanmamış. Lütfen ortam değişkenlerini kontrol edin.");
+  }
   const allowedTasks = MEB_TASK_LIBRARY.filter(t => {
     if (focusArea === "Sayısal") {
       return ["MATEMATİK", "FİZİK", "KİMYA", "BİYOLOJİ", "TÜRKÇE"].includes(t.subject_name);
@@ -279,6 +290,8 @@ export async function generateInitialStudyPlan(
        - Kimya: 'Kimya Bilimi & Atomun Yapısı' planlanmadan 'Organik Kimya' planlanamaz!
        - Biyoloji: 'Canlıların Ortak Özellikleri & Hücre' planlanmadan 'İnsan Fizyolojisi & Sistemler' planlanamaz!
     8. GÜNLERE DAĞITIM VE LİMİT: Her görev için 0 ile 4 arasında bir "day_offset" (gün sapması) belirle. (0: Bugün, 1: Yarın, vb.)
+    9. TEKRAR ETME YASAĞI (BENZERSİZ GÖREVLER): Havuzdan seçtiğin her bir görevin konusu (topic) benzersiz olmalıdır. 5 günlük planda aynı konuyu/görevi kesinlikle 2 veya daha fazla kez planlama. Her görev en fazla 1 kez seçilebilir.
+    10. GÜNLÜK GÖREV YÜKÜ LİMİTİ: Her güne (day_offset 0 ile 4) en fazla 1 veya en fazla 2 adet görev planlayabilirsin. 5 günlük planın tamamı için toplamda en az 5, en fazla 6 görev seç (öğrencinin haftalık çalışma saatine göre makul olsun). Zira her güne sistem tarafından ayrıca 2 adet rutin görev daha eklenecektir.
     
     DİKKAT EDİLECEK ÖRNEK SENARYOLAR (FEW-SHOT PROMPTING):
     - Hatalı Planlama (Zayıf Ders Baskısı): [Matematik-Zor (Zayıf Ders, day_offset: 0), Türkçe-Kolay (day_offset: 0)] -> Hata: İlk güne zayıf ders ve Zor seviye görev konmuş. Zayıf dersler en erken 3. gün (day_offset: 3) gelmelidir.

@@ -148,7 +148,30 @@ export default function RegisterScreen() {
           );
         })
         .then((aiTasks) => {
-          const supabaseTasks = aiTasks.map((t: any) => ({
+          // Client-side safety filters: deduplicate by title, filter out daily routine duplicates, limit to max 6 AI tasks
+          const uniqueAITasks: any[] = [];
+          const seenTitles = new Set<string>();
+          
+          for (const t of aiTasks) {
+            if (!t || !t.title) continue;
+            const cleanTitleStr = t.title.trim().toLowerCase();
+            
+            // Check if duplicate of daily routines (paragraf / problem)
+            if (cleanTitleStr.includes("paragraf") || cleanTitleStr.includes("problem")) {
+              continue;
+            }
+            
+            // Check if duplicate of already added AI task
+            if (!seenTitles.has(cleanTitleStr)) {
+              seenTitles.add(cleanTitleStr);
+              uniqueAITasks.push(t);
+            }
+          }
+          
+          // Limit to max 6 AI tasks total to prevent overloading
+          const finalAITasks = uniqueAITasks.slice(0, 6);
+
+          const supabaseTasks = finalAITasks.map((t: any) => ({
             user_id: userId,
             title: t.title,
             subject_name: t.subject_name,
