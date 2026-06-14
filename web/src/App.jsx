@@ -83,7 +83,7 @@ function App() {
   const [userName, setUserName] = useState(() => localStorage.getItem('userName') || 'Geleceğin Şampiyonu');
   const [userTarget, setUserTarget] = useState(() => localStorage.getItem('userTarget') || 'İlk 5000');
   const [userFocus, setUserFocus] = useState(() => localStorage.getItem('userFocus') || 'Sayısal');
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+  const [authMode, setAuthMode] = useState('register'); // 'login' or 'register'
   const [currentTab, setCurrentTab] = useState('home'); // 'home' or 'profile'
   const [activeTimerTask, setActiveTimerTask] = useState(null);
   const [program, setProgram] = useState([]);
