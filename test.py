@@ -9,7 +9,7 @@ key = os.getenv("GEMINI_API_KEY", "")
 key = key.replace('"', '').replace("'", "").strip()
 print("Key length:", len(key))
 
-url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={key}"
+url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={key}"
 headers = {"Content-Type": "application/json"}
 data = {
     "contents": [{"parts": [{"text": "Merhaba, test."}]}]

@@ -11,7 +11,7 @@ def call_gemini_api(payload: Dict[str, Any]) -> str:
     if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
         raise ValueError("Gemini API Anahtarı eksik veya geçersiz.")
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {"Content-Type": "application/json"}
     
     req = urllib.request.Request(
