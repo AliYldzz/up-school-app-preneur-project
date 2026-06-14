@@ -44,9 +44,13 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {
+        "origin": false
+      },
       "eas": {
-        "projectId": "BURAYA_EAS_PROJECT_ID_GELECEK"
+        "projectId": "83336fc4-296d-44fb-821c-440a178bc1ab"
       }
-    }
+    },
+    "owner": "alyldz"
   }
 }

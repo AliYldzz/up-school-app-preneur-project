@@ -1,118 +1,106 @@
 # PRD: Sınav Yol Arkadaşım v1.0 (MVP)
 
 **Sürüm:** 1.0  
-**Durum:** Taslak / Teknik İncelemeye Hazır  
+**Durum:** Yayında / Tamamlandı  
 **Hedef Kitle:** YKS (TYT/AYT) Öğrencileri  
 
 ---
 
 ## 1. Ürün Vizyonu ve Stratejik Özet
-Öğrencinin sınav maratonundaki en büyük düşmanı "belirsizlik" ve "planın bozulmasıyla gelen suçluluk duygusudur." Bu ürün, statik bir takvim yerine, öğrencinin verisine göre şekil alan yaşayan bir organizma sunar. Hedefimiz, öğrenciye **"Kontrol bende, sen sadece çalış"** mesajını vermektir.
+Öğrencinin sınav maratonundaki en büyük düşmanı "belirsizlik" ve "planın bozulmasıyla gelen suçluluk duygusudur." Sınav Yol Arkadaşım, statik bir ders çalışma takvimi yerine, öğrencinin verisine ve alanına göre şekil alan canlı ve esnek bir program sunar. Yapay zeka entegrasyonu ile öğrencilerin yapamadığı soruları analiz eder ve doğrudan onlara özel 5 günlük çalışma planları çıkartır.
 
 ---
 
 ## 2. Kullanıcı Personası ve User Story
-
-* **Persona:** Mert (17), İstanbul’da yaşıyor. Günde 2 saati toplu taşımada geçiyor. Bir gün planı aksatınca "battı balık yan gider" diyerek o haftayı bırakma eğiliminde.
-* **User Story:** *"Bir öğrenci olarak, gün içindeki aksamalarım ne olursa olsun, uygulamanın benim için en mantıklı yeni rotayı çizmesini istiyorum; böylece her sabah uyandığımda sadece önümdeki 3-4 göreve odaklanabilirim."*
+* **Persona:** Mert (17), YKS Sayısal öğrencisi. Haftalık çalışma hedefleri koyuyor ancak plan aksadığında motivasyonu kırılıyor ve programı tamamen aksatıyor.
+* **User Story:** *"Bir öğrenci olarak, gün içindeki aksamalarım ne olursa olsun, uygulamanın benim hedeflerime ve alanıma en uygun ders planını yapay zeka ile otomatik güncellemesini istiyorum; böylece her gün neye çalışmam gerektiğini bilerek güne başlayabilirim."*
 
 ---
 
-## 3. Fonksiyonel Gereksinimler (Teknik Detaylandırılmış)
+## 3. Fonksiyonel Gereksinimler (Uygulanan)
 
 ### FR0: Onboarding (Öğrenciyi Tanıma) Akışı
-Sistemin doğru çalışması için kullanıcıyı iyi tanıması gerekir. Kullanıcı uygulamaya kayıt olduktan hemen sonra, sıkıcı formlar yerine oyunlaştırılmış (gamified) bir kart akışıyla karşılaşır.
-* **Açıklama:** Öğrencinin hedeflerini ve çalışma alışkanlıklarını öğrenmek için sorulan 4 temel soru kartı:
-  1. **Hedef:** (Örn: İlk 5000, Tıp Fakültesi, Mühendislik)
-  2. **Haftalık Müsaitlik:** (Örn: 10-20 saat, 20-30 saat)
-  3. **Ağırlık Verilecek Dersler:** (Örn: Matematik, Fizik - Çoklu seçim)
-  4. **Odak Vakti:** (Sabah 🌅, Öğle ☀️, Akşam 🌙)
-* **Sonuç:** Bu veriler kullanıcının profiline işlenir ve FR1'deki DARR algoritmasının temel parametrelerini oluşturur.
+Sistemin doğru çalışması için kullanıcıyı iyi tanıması gerekir. Kayıt sonrasında kullanıcıdan şu bilgiler alınır:
+1. **Hedef Sıralama:** (Örn: İlk 5000, İlk 20000, İlk 50000 vb.)
+2. **Alan (Focus Area):** (Sayısal, Sözel, Eşit Ağırlık, Dil)
+3. **Haftalık Müsaitlik:** (Örn: 20 Saat, 30 Saat, 40 Saat)
+4. **Odak Vakti:** (Sabah 🌅, Öğle ☀️, Akşam 🌙)
+*Bu veriler kullanıcının profil tablosuna kaydedilir ve AI ders programı oluşturulurken girdi olarak kullanılır.*
 
-### FR1: DARR (Dynamic Adaptive Road Re-routing) Motoru
-Bu motor, uygulamanın beynidir. Sadece bir takvim değil, bir optimizasyon algoritmasıdır.
-* **Açıklama:** Kullanıcı bir görevi "Atla" (Skip) dediğinde veya belirlenen sürede bitirmediğinde, sistem kalan müfredatı sınav tarihine kadar olan günlere otomatik dağıtır.
-* **Algoritma Öncelik Matrisi:** Algoritma, yeniden dağıtım yaparken şu hiyerarşiyi izler:
-  * **Fixed Deadlines:** Sınav tarihine kalan gün sayısı ($D_{rem}$).
-  * **Weight (Ağırlık):** Konunun sınavdaki çıkma katsayısı ($W_c$).
-  * **Velocity (Hız):** Kullanıcının o konudaki geçmiş soru çözme hızı ($V_u$).
-  * **Cognitive Load (Bilişsel Yük):** Bir güne üst üste 2 "Zor" konu atanamaz.
-* **Yeniden Dağıtım Formülü (Basitleştirilmiş):** Yeni günlük yük ($L_{new}$), kalan toplam konu hacminin ($V_{total}$) kalan günlere bölünmesiyle değil, ağırlıklı katsayıyla hesaplanır:
-  `L_new = Σ(Subject_volume × W_c) / (D_rem × Efficiency_factor)`
-* **Öncelik:** P0 (Kritik)
+### FR1: AI Destekli Dinamik Ders Programı (Gemini 1.5 Flash)
+* **Açıklama:** Statik formüller yerine, Google Gemini API kullanılarak öğrencinin alanına özel (örn. Sözel öğrencisine Matematik-Türev dersi atamayan) 5 günlük esnek bir program üretilir.
+* **Akış:** Gemini, onboarding verilerini kullanarak her güne dengeli, bilişsel yükü aşmayan görev başlıkları ve süreleri belirler. Öğrenci görevleri tamamladığında "Bitir" butonuna tıklar ve çözdüğü doğru/yanlış soru sayılerini girerek ilerlemesini kaydeder.
 
-### FR2: Odak Modu (Esnek Kronometre) & Offline-First Senkronizasyon
-İstanbul metrosu gibi *intermittent connectivity* (kesintili bağlantı) olan yerlerde kullanıcı deneyimi sıfır hatayla çalışmalıdır.
-* **Açıklama:** Katı Pomodoro kuralları yerine öğrenciye kontrol veren **Odak Modu**. Kullanıcı dilediğinde süreyi uzatabilir, duraklatabilir. Uygulama "Background"a düştüğünde sayaç arka planda işlemeye devam eder.
-* **Local Storage:** Tüm çalışma seansları ve kronometre verileri SQLite veya yerel state üzerinde tutulur.
-* **Synchronization Logic (Conflict Resolution):** Çevrimdışı (Offline-First) senkronizasyonda sadece zaman damgasına (timestamp) güvenilmez (öğrenci saatini değiştirebilir). Bunun yerine her satırda bir `version` veya `revision_id` tutulur. Versiyon numarası büyük olan sunucuyu günceller.
-* **Background Tasks:** İnternet geldiği an yerel kuyruktaki (Queue) tamamlanan görevler sunucuya asenkronize şekilde iletilir.
+### FR2: Odak Modu (Esnek Kronometre) & Mobil Çalışma
+* **Açıklama:** Mobil uygulamada öğrencilerin ders çalışma seanslarını süre bazlı takip edebilmeleri için bir kronometre ve geri sayım sayacı bulunur.
+* **Çevrimdışı/Yerel Kayıt:** Mobil uygulamada seanslar ve görev durumları yerel state/async-storage üzerinde tutulur ve sunucuya gönderilir.
 
-### FR3: Hata Kumbarası (Image Processing)
-* **Açıklama:** Yanlış soruların fotoğrafını çekip saklama.
-* **Teknik Kriter:** Fotoğraflar cihazda optimize edilerek (sıkıştırılarak) saklanmalı. Etiketleme (Ders, Konu, Zorluk) metadata olarak tutulmalı.
-
+### FR3: Hata Kumbarası (Image Processing & Gemini Vision)
+* **Açıklama:** Öğrenci yapamadığı veya yanlış çözdüğü bir sorunun fotoğrafını çekip/yükleyip sisteme ekler.
+* **AI Analizi:** Gemini 1.5 Flash Vision modeli devreye girerek görseldeki soruyu OCR ile okur, hangi derse ve konuya ait olduğunu tespit eder, zorluk derecesini belirler ve öğrenciye adım adım detaylı çözümü metin olarak üretir. Tüm bu analiz veritabanında saklanır.
 
 ---
 
-## 4. Teknik Gereksinimler ve Mimari (Non-Functional)
+## 4. Teknik Mimari (Serverless & API)
 
-### 4.1. Veri Yapısı ve Veritabanı Şeması (Schema)
-İlişkisel bir model (PostgreSQL tercih edilir) üzerinden ilerlenecektir.
-| Tablo Adı | Alan (Field) | Tip (Type) | Açıklama |
-| :--- | :--- | :--- | :--- |
-| **Users** | `uuid` | PK (UUID) | Benzersiz kullanıcı ID. |
-| | `target_goal` | String | Onboarding'den gelen kullanıcı hedefi. |
-| | `weekly_hours` | Integer | Onboarding'den gelen haftalık çalışma saati. |
-| | `focus_time` | Enum | `morning`, `afternoon`, `evening` (Onboarding'den). |
-| **Tasks** | `task_id` | PK (UUID) | Offline-first çakışmalarını önlemek için UUID kullanılmalıdır. |
-| | `status` | Enum | `pending`, `in_progress`, `completed`, `skipped`, `failed`. |
-| | `priority_score`| Float | 0.0 - 1.0 arası algoritma puanı. |
-| **User_Stats** | `streak_count` | Integer | Ardışık gün sayısı. |
-| | `last_sync_at` | Timestamp | Offline veri tutarlılığı için. |
-| **Error_Vault** | `image_url` | String (S3) | Hata kumbarasındaki soru görseli. |
-| | `ocr_text` | Text | (Opsiyonel) Görseldeki sorunun text hali. |
+### 4.1. Veritabanı Şeması (Supabase PostgreSQL)
+Proje verileri, Supabase PostgreSQL üzerinde aşağıdaki tablolarla saklanmaktadır:
 
-*(Ek tablolar: User objesinde `exam_date`, `daily_goal_hours`; Task objesinde `subject_id`, `estimated_time`, `actual_time`; Performance objesinde `date`, `net_count`, `accuracy_rate` gibi alanlar da mevcuttur.)*
+#### 1. `public.users` (Kullanıcı Profilleri)
+* `id`: `uuid` (PK, Auth.users referansı)
+* `email`: `text` (Benzersiz e-posta)
+* `fullName`: `text` (Ad Soyad)
+* `focus_area`: `text` (Sayısal, Sözel, EA, Dil)
+* `target_goal`: `text` (Sıralama hedefi)
+* `weekly_hours`: `text` (Haftalık çalışma saati)
+* `focus_time`: `text` (Sabah, Öğle, Akşam)
+* `daily_goal_hours`: `double precision` (Günlük saat hedefi)
+* `created_at`: `timestamp`
 
-### 4.2. API ve State Management
-* **Backend Framework:** API geliştirme sürecinde FastAPI kullanılacaktır (Bkz: [fastapi docs](https://fastapi.tiangolo.com/)).
-* **State:** Uygulama, kullanıcının o anki "State"ini (Çalışıyor, Mola, Briefing Bekliyor) global bir state manager (Redux/Bloc vb.) ile takip etmelidir.
-* **Latency:** API yanıt süreleri 300ms altında olmalı.
-* **API Kontratı - POST `/v1/plan/reschedule`**
-  * Kullanıcı planı bozduğunda veya gün sonu geldiğinde tetiklenir.
-  * **Request Body:**
-    ```json
-    {
-      "reason": "skipped_by_user",
-      "incomplete_task_ids": [102, 105],
-      "current_energy_level": 3,
-      "remaining_days": 45
-    }
-    ```
-  * **Response:** `200 OK` + Yeni optimize edilmiş 7 günlük program objesi.
+#### 2. `public.tasks` (Görevler ve Çalışma Programı)
+* `id`: `bigint` (PK, Otomatik artan)
+* `user_id`: `uuid` (Users.id referansı)
+* `title`: `text` (Görev Başlığı)
+* `status`: `text` (pending, completed)
+* `subject_name`: `text` (Ders adı)
+* `estimated_time`: `integer` (Tahmini süre - dakika)
+* `actual_time`: `integer` (Harcanan süre - dakika)
+* `scheduled_date`: `text` (Planlanan gün/tarih)
+* `questions_solved`: `integer` (Çözülen soru sayısı)
+* `questions_correct`: `integer` (Doğru sayısı)
+* `questions_wrong`: `integer` (Yanlış sayısı)
+* `created_at`: `timestamp`
 
-### 4.3. Edge Cases ve Hata Yönetimi (Senior Yaklaşımı)
-* **Zaman Dilimi Kayması & Midnight Reset:** Kullanıcı gece 01:00'de ders çalışıyorsa, veri yeni güne değil, bir önceki güne yazılır ("Logic: Sleep as Reset"). Uygulama "Güne Devam" modunda kalır. Yeni gün (Morning Briefing) ancak kullanıcı 4 saatlik bir hareketsizlikten sonra veya manuel "Günü Bitir" dediğinde başlar.
-* **Eksik Veri (Yığılma Engelleme):** Kullanıcı 3 gün uygulamaya girmezse, DARR algoritması "Yığılma" yapmamalı, kullanıcıya *"Bazı konuları feda etme zamanı"* uyarısı çıkarmalıdır.
-* **The "Never-Ending" Task:** Odak Modu'nda süre uzatma özelliği olsa da, kullanıcı sayacı açık unutup gidebilir. *Çözüm:* Görev tahmini süresini çok fazla aşarsa (örneğin arka planda 3 saat çalışırsa), sistem *"Hala buralarda mısın?"* şeklinde yerel bir bildirim (Local Notification) atar. Yanıt yoksa seansı son inaktif sürede keser ve "Geçersiz" (Invalid) işaretler.
-* **Low Storage:** Hata kumbarası için fotoğraf çekerken telefon hafızası doluysa. *Çözüm:* Fotoğraf çekilmeden önce `disk_space_check` yapılır, kullanıcıya hata verilir ve düşük çözünürlüklü opsiyon sunulur.
+#### 3. `public.errors` (Hata Kumbarası Kayıtları)
+* `id`: `bigint` (PK)
+* `user_id`: `uuid` (Users.id referansı)
+* `image_data`: `text` (Base64 formatında soru görseli)
+* `subject_name`: `text` (Ders adı)
+* `topic_name`: `text` (Konu adı)
+* `difficulty`: `text` (Kolay, Orta, Zor)
+* `ocr_text`: `text` (Görselden okunan soru metni)
+* `solution_text`: `text` (AI tarafından üretilen adım adım çözüm)
+* `created_at`: `timestamp`
 
----
-
-## 5. UI/UX Prensipleri (Geliştirici İçin)
-* **Bilişsel Yük Azaltma:** Ana ekranda asla 3'ten fazla aksiyon (buton) olmamalı.
-* **Renk Paleti:** Odaklanmayı bozmayan **"Deep Blue"** ve **"Mint Green"** tonları. Gece çalışması için **"True Black"** Dark Mode desteği.
-* **Micro-interactions:** Bir görev tamamlandığında hissedilir bir haptic feedback (titreşim) ve görsel konfeti (hafif düzeyde).
-* **CPO'dan Developer'a Not:** *"Arkadaşlar, UI tarafında 'glossy' efektlerden ziyade, buton tepki sürelerine (input latency) odaklanın. Öğrenci o butona bastığında 100ms içinde tepki almalı. Bu uygulama bir eğlence aracı değil, bir performans aracı."*
+### 4.2. Dağıtık Mimari ve Yayına Alma
+* **Web Arayüzü (React/Vite):** Vercel üzerinde barındırılmaktadır. Performans, güvenlik ve hız sağlamak amacıyla veritabanı (Supabase) ve Yapay Zeka (Gemini API) bağlantıları tamamen **istemci taraflı sunucusuz (client-side serverless)** olarak kurgulanmıştır.
+* **Mobil Uygulama (React Native & Expo):** EAS Build sistemi kullanılarak Android için otomatik APK derlemesi yapılmıştır.
+* **Lokal Backend & API (FastAPI):** SQLite entegrasyonu ile geliştirme aşamasında lokal sunucu olarak çalışır. Canlı ortamda (Vercel) `DATABASE_URL` tanımlandığında doğrudan Supabase veritabanına bağlanır.
 
 ---
 
-## 6. Observability, Analytics ve Başarı Metrikleri
-Ürünü Unicorn yapan, veriyi okuma şeklimizdir.
-* **Funnel Tracking:** `Onboarding_Start` -> `Subject_Selection` -> `First_Focus_Mode` -> `Retention_D1`
-* **Event Tracking:** `task_completed`, `plan_rescheduled_click`
-* **Retention:** D1, D7 ve D30 takibi.
-* **Churn Predictor:** Eğer bir kullanıcı üst üste 3 gün "Planı Kurtar" (Reschedule) butonuna basıyorsa, `is_at_risk: true` bayrağı (flag) atanır ve ona özel bir "Motivasyon Briefing"i tetiklenir.
-* **Performance Monitoring:** Algoritmanın çalışma süresi (Execution Time) her zaman `< 500ms` olmalıdır.
-* **Analiz:** Kullanıcıların planı ne sıklıkla Reschedule butonuna basarak güncellediğinin takibi.
+## 5. UI/UX Prensipleri: Soft Sage-Green Light Theme
+Göz yorgunluğunu önlemek ve premium bir çalışma deneyimi sunmak amacıyla şu arayüz kuralları uygulanmıştır:
+* **Arka Plan:** Rahatlatıcı gri-yeşil tonu `#EBF0EC`
+* **Kartlar ve Paneller:** Sade ve temiz beyaz `#FFFFFF`
+* **Metinler ve Başlıklar:** Koyu orman/çam yeşili `#1B2A1C`
+* **Butonlar ve Birincil Ögeler:** Orman yeşili `#005D32`
+* **Aksanlar:** Sayaç için mavi `#3498DB` ve rozetler için mercan rengi `#FF9875`
+
+---
+
+## 6. PRD Kapsamından Çıkarılan Maddeler
+MVP sürümünü sadeleştirmek ve en yüksek kararlılıkta çalıştırmak adına aşağıdaki maddeler ilk aşamada kapsam dışı bırakılmıştır:
+* **Çok Kanallı Çevrimdışı Çakışma Yönetimi (Conflict Resolution):** Çok detaylı versiyon-kontrollü veritabanı eşitleme protokolü yerine, veriler doğrudan internet bağlantısı varken Supabase üzerinde anlık güncellenir; mobil tarafta ise yerel state önbelleğe alınır.
+* **Koyu Tema (Dark Mode):** Uygulama gözü yormayan hafif ve yumuşak "Soft Sage-Green" aydınlık temasına odaklanmıştır.
+* **Fixed Formula DARR Algoritması:** Karmaşık matematiksel formüller (`L_new = Σ(...)`) yerine, çok daha esnek, pedagojik kurallara sahip ve bağlamsal planlama yapabilen **Gemini 1.5 Flash üretken AI** modeli tercih edilmiştir.
